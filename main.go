@@ -2,9 +2,8 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 	"log"
-	"math/rand"
 	"net/http"
 	"os"
 	"os/signal"
@@ -22,7 +21,7 @@ func main() {
 		Addr: "localhost:5000",
 		ReadTimeout: time.Second * 5,
 		WriteTimeout: time.Second * 5,
-		Handler: http.HandlerFunc(Echo),
+		Handler: http.HandlerFunc(ListProducts),
 	}
 
 	// Make a channel to listen for errors coming from listener, use a
@@ -42,7 +41,6 @@ func main() {
 
 	// =========================================================
 	// Shutdown
-
 	// Blocking main and waiting for shutdown
 	select {
 	case err := <- serviceErrors:
@@ -69,11 +67,27 @@ func main() {
 	}
 }
 
-func Echo(w http.ResponseWriter, r *http.Request) {
-	random := rand.Intn(10000)
-	log.Printf("echo: Starting %d", random)
-	defer log.Printf("echo: Finishing %d", random)
+type Product struct {
+	Name string
+	Cost int
+	Quantity int
+}
 
-	time.Sleep(time.Second * 3)
-	fmt.Fprintf(w, "You asked for %s %s.\n", r.Method, r.URL.Path)
+// ListProducts gets all the products
+func ListProducts(w http.ResponseWriter, r *http.Request) {
+	lists := []Product{
+		{Name: "Comic book", Cost: 75, Quantity: 20},
+		{Name: "McDonald's toy", Cost: 25, Quantity: 120},
+	}
+
+	data, err := json.MarshalIndent(lists, "", "   ");
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Println("Cannot generate json object")
+		return
+	}
+
+	if _, err := w.Write(data); err != nil {
+		log.Println("Cannot respond to the user")
+	}
 }
