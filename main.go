@@ -68,9 +68,9 @@ func main() {
 }
 
 type Product struct {
-	Name string
-	Cost int
-	Quantity int
+	Name string `json:"name"`
+	Cost int `json:"cost"`
+	Quantity int `json:"quantity"`
 }
 
 // ListProducts gets all the products
