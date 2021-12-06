@@ -75,9 +75,12 @@ type Product struct {
 
 // ListProducts gets all the products
 func ListProducts(w http.ResponseWriter, r *http.Request) {
-	lists := []Product{
-		{Name: "Comic book", Cost: 75, Quantity: 20},
-		{Name: "McDonald's toy", Cost: 25, Quantity: 120},
+	lists := []Product{}
+
+	lists = append(lists, Product{Name: "Comic book", Cost: 75, Quantity: 20})
+	lists =append(lists, Product{Name: "McDonald's toy", Cost: 25, Quantity: 120})
+
+
 	}
 
 	data, err := json.MarshalIndent(lists, "", "   ");
