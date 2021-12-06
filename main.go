@@ -81,9 +81,9 @@ func ListProducts(w http.ResponseWriter, r *http.Request) {
 	lists =append(lists, Product{Name: "McDonald's toy", Cost: 25, Quantity: 120})
 
 
-	}
+	
 
-	data, err := json.MarshalIndent(lists, "", "   ");
+	data, err := json.MarshalIndent(lists, "", "   ")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Println("Cannot generate json object")
