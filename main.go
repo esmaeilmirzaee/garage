@@ -87,6 +87,7 @@ func ListProducts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	if _, err := w.Write(data); err != nil {
 		log.Println("Cannot respond to the user")
 	}
