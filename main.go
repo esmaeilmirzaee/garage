@@ -67,6 +67,8 @@ func main() {
 	}
 }
 
+
+
 type Product struct {
 	Name string `json:"name"`
 	Cost int `json:"cost"`
