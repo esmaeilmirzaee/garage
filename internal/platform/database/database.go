@@ -20,9 +20,10 @@ func Open(cfg Config) (*sqlx.DB, error) {
 	q := url.Values{}
 
 	q.Set("timezone", "utc")
-	q.Set("sslmode", "required")
+	// sslmode only "require" (default), "verify-full", "verify-ca", and "disable" supported
+	q.Set("sslmode", "require")
 	if cfg.DisableTLS {
-		q.Set("sslmode", "disabled")
+		q.Set("sslmode", "disable")
 	}
 
 	u := url.URL{
