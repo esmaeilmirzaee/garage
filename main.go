@@ -54,14 +54,14 @@ func main() {
 		return
 	}
 
-
+	ps := ProductService{db: db}
 
 	// =========================================================
 	api := http.Server{
 		Addr: "localhost:5000",
 		ReadTimeout: time.Second * 5,
 		WriteTimeout: time.Second * 5,
-		Handler: http.HandlerFunc(ListProducts),
+		Handler: http.HandlerFunc(ps.List),
 	}
 
 	// Make a channel to listen for errors coming from listener, use a
@@ -129,17 +129,23 @@ type Product struct {
 	Quantity int `json:"quantity"`
 }
 
-// ListProducts gets all the products
-func ListProducts(w http.ResponseWriter, r *http.Request) {
-	lists := []Product{}
+type ProductService struct {
+	db *sqlx.DB
+}
 
-	lists = append(lists, Product{Name: "Comic book", Cost: 75, Quantity: 20})
-	lists =append(lists, Product{Name: "McDonald's toy", Cost: 25, Quantity: 120})
+// List gets all the products
+func (p *ProductService) List(w http.ResponseWriter, r *http.Request) {
+	list := []Product{}
 
+	const q = "SELECT product_id, name, cost, quantity, createdAt, updatedAt FROM products;"
 
-	
+	if err := p.db.Select(&list, q); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Println("Could not query the database", err)
+		return
+	}
 
-	data, err := json.MarshalIndent(lists, "", "   ")
+	data, err := json.MarshalIndent(list, "", "   ")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Println("Cannot generate json object")
