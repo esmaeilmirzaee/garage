@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"github.com/ardanlabs/conf"
 	"github.com/esmaeilmirzaee/grage/cmd/api/internal/handlers"
 	"github.com/esmaeilmirzaee/grage/internal/platform/database"
 	"log"
@@ -10,10 +12,56 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	_ "github.com/ardanlabs/conf"
 )
 
 func main() {
-	db, err := database.Open()
+	var cfg struct{
+		DB struct{
+			User	string	`conf:"default:postgres"`
+			Password	string `conf:"default:secret,noprint"`
+			Name	string	`conf:"default:garage"`
+			Host string	`conf:"default:192.168.101.2:5234"`
+			DisableTLS	bool `conf:"default:true"`
+		}
+	}
+
+	// =============================================================
+	// App starting
+	log.Printf("main: Started.")
+	defer log.Println("main: Ended.")
+
+
+	// =============================================================
+	// Get configuration
+	if err := conf.Parse(os.Args[1:], "SALES | ", &cfg); err != nil {
+		if err == conf.ErrHelpWanted{
+			usage, err := conf.Usage("SALES", &cfg)
+			if err != nil {
+				log.Fatalf("error: generating config usage: %v", err)
+			}
+			fmt.Println(usage)
+			return
+		}
+		log.Fatalf("error: Parsing config: %s.", err)
+	}
+
+	out, err := conf.String(&cfg)
+	if err != nil {
+		log.Fatalf("error: Generating config output. %v", err)
+	}
+	log.Printf("main: Config \n%v\n", out)
+
+	// =============================================================
+	// Setup dependencies
+	db, err := database.Open(database.Config{
+		Host: cfg.DB.Host,
+		Name: cfg.DB.Name,
+		User: cfg.DB.User,
+		Password: cfg.DB.Password,
+		DisableTLS: cfg.DB.DisableTLS,
+	})
 	if err != nil {
 		log.Fatalln("main: Could not connect to database.", err)
 	}

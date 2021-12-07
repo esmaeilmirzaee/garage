@@ -7,17 +7,29 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// Open creates a connection to the database
-func Open() (*sqlx.DB, error) {
+type Config struct {
+	Host		string
+	Name		string
+	User		string
+	Password	string
+	DisableTLS	bool
+}
+
+// Open knows how to open a database connection
+func Open(cfg Config) (*sqlx.DB, error) {
 	q := url.Values{}
-	q.Set("sslmode", "disable")
+
 	q.Set("timezone", "utc")
+	q.Set("sslmode", "required")
+	if cfg.DisableTLS {
+		q.Set("sslmode", "disabled")
+	}
 
 	u := url.URL{
 		Scheme: "postgres",
-		User: url.UserPassword("pgdmn", "secret"),
-		Host: "192.168.101.2:5234",
-		Path: "garage",
+		User: url.UserPassword(cfg.User, cfg.Password),
+		Host: cfg.Host,
+		Path: cfg.Name,
 		RawQuery: q.Encode(),
 	}
 
