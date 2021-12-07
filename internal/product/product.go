@@ -11,7 +11,7 @@ func List(db *sqlx.DB) ([]Product, error) {
 	const q = "SELECT product_id, name, cost, quantity, created_at, updated_at FROM products;"
 
 	if err := db.Select(&list, q); err != nil {
-		log.Println("internal: Could not query the database")
+		log.Println("internal: Could not query the database", err)
 		return nil, err
 	}
 

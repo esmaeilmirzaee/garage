@@ -8,15 +8,17 @@ import (
 	"net/http"
 )
 
+//
 type ProductService struct {
 	DB *sqlx.DB
 }
 
+//
 func (p *ProductService) Product(w http.ResponseWriter, r *http.Request) {
 	list, err := product.List(p.DB)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		log.Println("handlers: Could not receive database data.")
+		log.Println("handlers: Could not receive database data.", err)
 		return
 	}
 
