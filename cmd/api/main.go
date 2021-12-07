@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"context"
@@ -27,7 +27,7 @@ func main() {
 		Addr: "localhost:5000",
 		ReadTimeout: 5 * time.Second,
 		WriteTimeout: 5 * time.Second,
-		Handler: http.HandlerFunc(ps.List),
+		Handler: http.HandlerFunc(ps.Product),
 	}
 
 	serverErrors := make(chan error, 1)

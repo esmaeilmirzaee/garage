@@ -3,6 +3,8 @@ package database
 import (
 	"github.com/jmoiron/sqlx"
 	"net/url"
+
+	_ "github.com/lib/pq"
 )
 
 // Open creates a connection to the database
