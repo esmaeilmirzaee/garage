@@ -13,23 +13,31 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/pkg/errors"
+
 	_ "github.com/ardanlabs/conf"
 )
 
 func main() {
-	var cfg struct{
-		Web struct{
-			Address	string	`conf:"default:localhost:5000"`
-			ReadTimeout	time.Duration	`conf:"default:5s"`
-			WriteTimeout	time.Duration `conf:"default:5s"`
-			ShutdownTimeout	time.Duration `conf:"default:5s"`
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run() error {
+	var cfg struct {
+		Web struct {
+			Address         string        `conf:"default:localhost:5000"`
+			ReadTimeout     time.Duration `conf:"default:5s"`
+			WriteTimeout    time.Duration `conf:"default:5s"`
+			ShutdownTimeout time.Duration `conf:"default:5s"`
 		}
-		DB struct{
-			User	string	`conf:"default:pgdmn"`
-			Password	string `conf:"default:secret,noprint"`
-			Name	string	`conf:"default:garage"`
-			Host string	`conf:"default:192.168.101.2:5234"`
-			DisableTLS	bool `conf:"default:true"`
+		DB struct {
+			User       string `conf:"default:pgdmn"`
+			Password   string `conf:"default:secret,noprint"`
+			Name       string `conf:"default:garage"`
+			Host       string `conf:"default:192.168.101.2:5234"`
+			DisableTLS bool   `conf:"default:true"`
 		}
 	}
 
@@ -38,38 +46,37 @@ func main() {
 	log.Printf("main: Started.")
 	defer log.Println("main: Ended.")
 
-
 	// =============================================================
 	// Get configuration
 	if err := conf.Parse(os.Args[1:], "SALES | ", &cfg); err != nil {
-		if err == conf.ErrHelpWanted{
+		if err == conf.ErrHelpWanted {
 			usage, err := conf.Usage("SALES", &cfg)
 			if err != nil {
-				log.Fatalf("error: generating config usage: %v", err)
+				return errors.Wrap(err, "generating config usage")
 			}
 			fmt.Println(usage)
-			return
+			return nil
 		}
-		log.Fatalf("error: Parsing config: %s.", err)
+		return errors.Wrap(err, "Parsing config.")
 	}
 
 	out, err := conf.String(&cfg)
 	if err != nil {
-		log.Fatalf("error: Generating config output. %v", err)
+		return errors.Wrap(err, "Generating config output.")
 	}
 	log.Printf("main: Config \n%v\n", out)
 
 	// =============================================================
 	// Setup dependencies
 	db, err := database.Open(database.Config{
-		Host: cfg.DB.Host,
-		Name: cfg.DB.Name,
-		User: cfg.DB.User,
-		Password: cfg.DB.Password,
+		Host:       cfg.DB.Host,
+		Name:       cfg.DB.Name,
+		User:       cfg.DB.User,
+		Password:   cfg.DB.Password,
 		DisableTLS: cfg.DB.DisableTLS,
 	})
 	if err != nil {
-		log.Fatalln("main: Could not connect to database.", err)
+		return errors.Wrap(err, "Could not connect to database.")
 	}
 
 	ps := handlers.ProductService{
@@ -78,15 +85,15 @@ func main() {
 
 	// Setup applications
 	api := http.Server{
-		Addr: cfg.Web.Address,
-		ReadTimeout: cfg.Web.ReadTimeout,
+		Addr:         cfg.Web.Address,
+		ReadTimeout:  cfg.Web.ReadTimeout,
 		WriteTimeout: cfg.Web.WriteTimeout,
-		Handler: http.HandlerFunc(ps.Product),
+		Handler:      http.HandlerFunc(ps.Product),
 	}
 
 	serverErrors := make(chan error, 1)
 
-	go func(){
+	go func() {
 		log.Println("main: Api is listening on ", api.Addr)
 		serverErrors <- api.ListenAndServe()
 	}()
@@ -95,21 +102,22 @@ func main() {
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 
 	select {
-		case err := <- serverErrors:
-			log.Fatalf("main: Listening and serving: %s", err)
-		case <-shutdown:
-			log.Println("main: Start shutdown")
-			ctx, cancel := context.WithTimeout(context.Background(), cfg.Web.ShutdownTimeout)
-			defer cancel()
+	case err := <-serverErrors:
+		return errors.Wrap(err, "Listening and serving")
+	case <-shutdown:
+		log.Println("main: Start shutdown")
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.Web.ShutdownTimeout)
+		defer cancel()
 
-			err := api.Shutdown(ctx)
-			if err != nil {
-				log.Fatalf("main: Grceful shut down did not complete in %d. %s", cfg.Web.ShutdownTimeout, err)
-				err = api.Close()
-			}
+		err := api.Shutdown(ctx)
+		if err != nil {
+			return errors.Wrap(err, "main: Grceful shut down did not complete.")
+		}
 
-			if err != nil {
-				log.Fatalf("Could not gracefully shut down server. %s", err)
-			}
+		if err != nil {
+			return errors.Wrap(err, "Could not gracefully shut down server.")
+		}
 	}
+
+	return nil
 }
