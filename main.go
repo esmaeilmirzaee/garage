@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
+	"github.com/esmaeilmirzaee/grage/schema"
 	"log"
 	"net/http"
 	"net/url"
@@ -34,6 +36,23 @@ func main() {
 			log.Println(err)
 		}
 	}()
+
+	// Handling migration and seed requests
+	flag.Parse()
+	switch flag.Arg(0) {
+	case "migrate":
+		if err := schema.Migrate(db); err != nil {
+			log.Fatal("Failed to migrate database", err)
+		}
+		log.Println("Migrate is complete.")
+		return
+	case "seed":
+		if err := schema.Seed(db); err != nil {
+			log.Fatal("Failed to seed the database", err)
+		}
+		log.Println("Seed is complete")
+		return
+	}
 
 
 
@@ -97,7 +116,7 @@ func openDB() (*sqlx.DB, error) {
 		Scheme: "postgres",
 		User: url.UserPassword("pgdmn", "secret"),
 		Host: "192.168.101.2:5234",
-		Path: "postgres",
+		Path: "garage",
 		RawQuery: q.Encode(),
 	}
 
