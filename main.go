@@ -5,10 +5,14 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 func main() {
@@ -16,6 +20,23 @@ func main() {
 	 */
 	log.Printf("main: Startd")
 	defer log.Println("main: Finished")
+	// =========================================================
+	// Setup dependencies
+	log.Println("Setup database connection.")
+	db, err := openDB()
+	if err != nil{
+		log.Println("Could not connect to database")
+		log.Fatal(err)
+	}
+
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Println(err)
+		}
+	}()
+
+
+
 	// =========================================================
 	api := http.Server{
 		Addr: "localhost:5000",
@@ -67,7 +88,21 @@ func main() {
 	}
 }
 
+func openDB() (*sqlx.DB, error) {
+	q := url.Values{}
+	q.Set("sslmode", "disable")
+	q.Set("timezone", "utc")
 
+	u := url.URL{
+		Scheme: "postgres",
+		User: url.UserPassword("pgdmn", "secret"),
+		Host: "192.168.101.2:5234",
+		Path: "postgres",
+		RawQuery: q.Encode(),
+	}
+
+	return sqlx.Open("postgres", u.String())
+}
 
 type Product struct {
 	Name string `json:"name"`
