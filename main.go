@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
+	"github.com/esmaeilmirzaee/grage/schema"
 	"log"
 	"net/http"
 	"net/url"
@@ -35,14 +37,31 @@ func main() {
 		}
 	}()
 
+	// Handling migration and seed requests
+	flag.Parse()
+	switch flag.Arg(0) {
+	case "migrate":
+		if err := schema.Migrate(db); err != nil {
+			log.Fatal("Failed to migrate database", err)
+		}
+		log.Println("Migrate is complete.")
+		return
+	case "seed":
+		if err := schema.Seed(db); err != nil {
+			log.Fatal("Failed to seed the database", err)
+		}
+		log.Println("Seed is complete")
+		return
+	}
 
+	ps := ProductService{db: db}
 
 	// =========================================================
 	api := http.Server{
 		Addr: "localhost:5000",
 		ReadTimeout: time.Second * 5,
 		WriteTimeout: time.Second * 5,
-		Handler: http.HandlerFunc(ListProducts),
+		Handler: http.HandlerFunc(ps.List),
 	}
 
 	// Make a channel to listen for errors coming from listener, use a
@@ -97,7 +116,7 @@ func openDB() (*sqlx.DB, error) {
 		Scheme: "postgres",
 		User: url.UserPassword("pgdmn", "secret"),
 		Host: "192.168.101.2:5234",
-		Path: "postgres",
+		Path: "garage",
 		RawQuery: q.Encode(),
 	}
 
@@ -105,22 +124,31 @@ func openDB() (*sqlx.DB, error) {
 }
 
 type Product struct {
-	Name string `json:"name"`
-	Cost int `json:"cost"`
-	Quantity int `json:"quantity"`
+	ID	string `db:"product_id" json:"id"`
+	Name string `db:"name" json:"name"`
+	Cost int `db:"cost" json:"cost"`
+	Quantity int `db:"quantity" json:"quantity"`
+	CreatedAt	time.Time	`db:"created_at" json:"created_at"`
+	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
 }
 
-// ListProducts gets all the products
-func ListProducts(w http.ResponseWriter, r *http.Request) {
-	lists := []Product{}
+type ProductService struct {
+	db *sqlx.DB
+}
 
-	lists = append(lists, Product{Name: "Comic book", Cost: 75, Quantity: 20})
-	lists =append(lists, Product{Name: "McDonald's toy", Cost: 25, Quantity: 120})
+// List gets all the products
+func (p *ProductService) List(w http.ResponseWriter, r *http.Request) {
+	list := []Product{}
 
+	const q = "SELECT product_id, name, cost, quantity, created_at, updated_at FROM products;"
 
-	
+	if err := p.db.Select(&list, q); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Println("Could not query the database", err)
+		return
+	}
 
-	data, err := json.MarshalIndent(lists, "", "   ")
+	data, err := json.MarshalIndent(list, "", "   ")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Println("Cannot generate json object")
