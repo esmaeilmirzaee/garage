@@ -14,8 +14,9 @@ import "github.com/jmoiron/sqlx"
 // Note that database servers besides PostgreSQL may not support running multiple queries
 // as part of the same execution so this single large constant may need to be broken up.
 
-const seeds = `TRUNCATE TABLE products; INSERT INTO products (product_id, name, cost, quantity, createdAt, 
-updatedAt) VALUES ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Comic books', 50, 42, '2021-01-12 00:00:01.000001+00', '2021-01-12 00:00:01.000001+00'),('d2cabc99-9c0b-4ef8-bb6a-2bb9bd380b2c', 'McDonalds toys', 75, 120, '2021-01-12 00:00:01.000001+00', '2021-01-12 00:00:01.000001+00') ON CONFLICT DO NOTHING;`
+const seeds = `TRUNCATE TABLE products; INSERT INTO products (product_id, name, cost, quantity, created_at, 
+updated_at) VALUES ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Comic books', 50, 42, '2021-01-12 00:00:01.000001+00', 
+'2021-01-12 00:00:01.000001+00'),('d2cabc99-9c0b-4ef8-bb6a-2bb9bd380b2c', 'McDonalds toys', 75, 120, '2021-01-12 00:00:01.000001+00', '2021-01-12 00:00:01.000001+00') ON CONFLICT DO NOTHING;`
 
 // Seed runs the set of seed-data queries against db. The queries are ran in a
 // transaction and rolled back if any fail.

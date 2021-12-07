@@ -124,12 +124,12 @@ func openDB() (*sqlx.DB, error) {
 }
 
 type Product struct {
-	ID	string `json:"id"`
-	Name string `json:"name"`
-	Cost int `json:"cost"`
-	Quantity int `json:"quantity"`
-	CreatedAt	time.Time	`json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID	string `db:"product_id" json:"id"`
+	Name string `db:"name" json:"name"`
+	Cost int `db:"cost" json:"cost"`
+	Quantity int `db:"quantity" json:"quantity"`
+	CreatedAt	time.Time	`db:"created_at" json:"created_at"`
+	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
 }
 
 type ProductService struct {
@@ -140,7 +140,7 @@ type ProductService struct {
 func (p *ProductService) List(w http.ResponseWriter, r *http.Request) {
 	list := []Product{}
 
-	const q = "SELECT product_id, name, cost, quantity, createdAt, updatedAt FROM products;"
+	const q = "SELECT product_id, name, cost, quantity, created_at, updated_at FROM products;"
 
 	if err := p.db.Select(&list, q); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

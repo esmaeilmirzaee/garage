@@ -20,8 +20,8 @@ var migrations = []darwin.Migration{
 					name	TEXT,
 					cost 	INT,
 					quantity	INT,
-					createdAt	TIMESTAMP,
-					updatedAt	TIMESTAMP,
+					created_at	TIMESTAMP,
+					updated_at	TIMESTAMP,
 
 					PRIMARY KEY (product_id)
 				);`,
