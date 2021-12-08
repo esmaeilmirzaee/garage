@@ -11,7 +11,7 @@ import (
 	"github.com/go-chi/chi"
 )
 
-// ProductService os
+// ProductService is used to add database and log to a request.
 type ProductService struct {
 	DB *sqlx.DB
 	Log *log.Logger
