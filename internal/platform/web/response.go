@@ -6,8 +6,8 @@ import (
 	"net/http"
 )
 
-// Response returns the client provided data
-func Response(w http.ResponseWriter, value interface{}, statusCode int) error {
+// Respond returns the client provided data
+func Respond(w http.ResponseWriter, value interface{}, statusCode int) error {
 	w.Header().Set("content-type", "application/json; charset=urf8")
 	w.WriteHeader(statusCode)
 
