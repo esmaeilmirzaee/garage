@@ -8,24 +8,25 @@ import (
 	"net/http"
 )
 
-//
+// ProductService os
 type ProductService struct {
 	DB *sqlx.DB
+	Log *log.Logger
 }
 
-//
+// Product returns all the products stored in the database
 func (p *ProductService) Product(w http.ResponseWriter, r *http.Request) {
 	list, err := product.List(p.DB)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		log.Println("handlers: Could not receive database data.", err)
+		p.Log.Println("handlers: Could not receive database data.", err)
 		return
 	}
 
 	data, err := json.MarshalIndent(&list, "", "   ")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		log.Println("Could not marshal data", err)
+		p.Log.Println("Could not marshal data", err)
 		return
 	}
 

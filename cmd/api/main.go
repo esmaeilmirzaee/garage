@@ -25,6 +25,7 @@ func main() {
 }
 
 func run() error {
+	log := log.New(os.Stdout, "SALES | ", log.LstdFlags|log.Lmicroseconds|log.Llongfile)
 	var cfg struct {
 		Web struct {
 			Address         string        `conf:"default:localhost:5000"`
@@ -81,6 +82,7 @@ func run() error {
 
 	ps := handlers.ProductService{
 		DB: db,
+		Log: log,
 	}
 
 	// Setup applications
