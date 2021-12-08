@@ -1,11 +1,18 @@
 package product
 
 import (
+	"database/sql"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	"log"
 	"time"
-	"github.com/google/uuid"
+)
+
+// Predefined errors for known failure scenario.
+var (
+	ErrNotFound = errors.New("Not found")
+	ErrInvalidUUID = errors.New("Invalid ID")
 )
 
 // List queries a database for products
@@ -23,10 +30,17 @@ func List(db *sqlx.DB) ([]Product, error) {
 
 // Retrieve returns a product
 func Retrieve(db *sqlx.DB, id string) (*Product, error) {
+	if _, err := uuid.Parse(id); err != nil {
+		return nil, ErrInvalidUUID
+	}
+
 	var p Product
 	q := `SELECT product_id, name, cost, quantity, created_at, updated_at FROM products WHERE product_id = $1`
 
 	if err := db.Get(&p, q, id); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrNotFound
+		}
 		return nil, err
 	}
 
