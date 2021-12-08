@@ -81,7 +81,6 @@ func run() error {
 		return errors.Wrap(err, "Could not connect to database.")
 	}
 
-
 	// Setup applications
 	api := http.Server{
 		Addr:         cfg.Web.Address,
