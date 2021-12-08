@@ -25,7 +25,7 @@ func main() {
 }
 
 func run() error {
-	log := log.New(os.Stdout, "SALES | ", log.LstdFlags|log.Lmicroseconds|log.Llongfile)
+	log := log.New(os.Stdout, "SALES | ", log.LstdFlags|log.Lmicroseconds|log.Lshortfile)
 
 	var cfg struct {
 		Web struct {
