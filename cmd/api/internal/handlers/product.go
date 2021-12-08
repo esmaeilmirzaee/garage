@@ -14,8 +14,8 @@ type ProductService struct {
 	Log *log.Logger
 }
 
-// Product returns all the products stored in the database
-func (p *ProductService) Product(w http.ResponseWriter, r *http.Request) {
+// List returns all the products stored in the database
+func (p *ProductService) List(w http.ResponseWriter, r *http.Request) {
 	list, err := product.List(p.DB)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
