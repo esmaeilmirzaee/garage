@@ -31,5 +31,35 @@ func (p *ProductService) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(data)
+	_, err = w.Write(data)
+	if err != nil {
+		p.Log.Println("Could not write to the browser", err)
+		return
+	}
+}
+
+
+// Retrieve returns a product to the browser
+func (p *ProductService) Retrieve(w http.ResponseWriter, r *http.Request) {
+	id := "TODO"
+	prod, err := product.Retrieve(p.DB, id)
+	if err != nil {
+		p.Log.Println("Could not receive the product", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	data, err := json.MarshalIndent(prod, "", "   ")
+	if err != nil {
+		p.Log.Println("Could not marshal the product", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	_, err = w.Write(data)
+	if err != nil {
+		p.Log.Println("Could not response the result", err)
+		return
+	}
 }
