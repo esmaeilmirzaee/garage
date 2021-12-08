@@ -4,6 +4,7 @@ import (
 	"github.com/esmaeilmirzaee/grage/internal/platform/web"
 	"github.com/esmaeilmirzaee/grage/internal/product"
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 	"log"
 	"net/http"
 	"time"
@@ -33,7 +34,14 @@ func (p *ProductService) Retrieve(w http.ResponseWriter, r *http.Request) error 
 	id := chi.URLParam(r, "id")
 	prod, err := product.Retrieve(p.DB, id)
 	if err != nil {
-		return err
+		switch err {
+		case product.ErrNotFound:
+			return web.NewRequestError(err, http.StatusNotFound)
+		case product.ErrInvalidUUID:
+			return web.NewRequestError(err, http.StatusBadRequest)
+		default:
+			return errors.Wrapf(err, "looking for products %q", id)
+		}
 	}
 
 	return web.Respond(w, prod, http.StatusOK)
