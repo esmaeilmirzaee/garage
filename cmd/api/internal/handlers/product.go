@@ -6,6 +6,8 @@ import (
 	"github.com/jmoiron/sqlx"
 	"log"
 	"net/http"
+
+	"github.com/go-chi/chi"
 )
 
 // ProductService os
@@ -41,7 +43,7 @@ func (p *ProductService) List(w http.ResponseWriter, r *http.Request) {
 
 // Retrieve returns a product to the browser
 func (p *ProductService) Retrieve(w http.ResponseWriter, r *http.Request) {
-	id := "TODO"
+	id := chi.URLParam(r, "id")
 	prod, err := product.Retrieve(p.DB, id)
 	if err != nil {
 		p.Log.Println("Could not receive the product", err)
