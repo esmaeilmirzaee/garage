@@ -6,6 +6,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi"
 )
@@ -59,9 +60,42 @@ func (p *ProductService) Retrieve(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
 	_, err = w.Write(data)
 	if err != nil {
 		p.Log.Println("Could not response the result", err)
+		return
+	}
+}
+
+// Create decodes a json document from a POST request and creates a new Product.
+func (p *ProductService) Create(w http.ResponseWriter, r *http.Request) {
+	var np product.NewProduct
+	if err := json.NewDecoder(r.Body).Decode(&np); err != nil {
+		p.Log.Println("Could not decode product", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	 prod, err := product.Create(p.DB, np, time.Now())
+	 if err != nil {
+		p.Log.Println("Could not store in the database", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	data, err := json.MarshalIndent(prod, "", "   ")
+	if err != nil {
+		p.Log.Println("Could not marshal the data", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("content-type", "application/json; charset=utf8")
+	w.WriteHeader(http.StatusCreated)
+	if _, err := w.Write(data); err != nil {
+		p.Log.Println("Could not write to the client", err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 }
