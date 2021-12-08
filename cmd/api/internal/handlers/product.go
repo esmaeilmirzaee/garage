@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"github.com/esmaeilmirzaee/grage/internal/platform/web"
 	"github.com/esmaeilmirzaee/grage/internal/product"
 	"github.com/jmoiron/sqlx"
 	"log"
@@ -26,17 +27,8 @@ func (p *ProductService) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := json.MarshalIndent(&list, "", "   ")
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		p.Log.Println("Could not marshal data", err)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write(data)
-	if err != nil {
-		p.Log.Println("Could not write to the browser", err)
+	if err = web.Response(w, list, http.StatusOK); err != nil {
+		p.Log.Println("Could not response to the client", err)
 		return
 	}
 }
@@ -52,18 +44,8 @@ func (p *ProductService) Retrieve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := json.MarshalIndent(prod, "", "   ")
-	if err != nil {
-		p.Log.Println("Could not marshal the product", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(data)
-	if err != nil {
-		p.Log.Println("Could not response the result", err)
+	if err = web.Response(w, prod, http.StatusOK); err != nil {
+		p.Log.Println("Could not response to the client", err)
 		return
 	}
 }
@@ -84,18 +66,8 @@ func (p *ProductService) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := json.MarshalIndent(prod, "", "   ")
-	if err != nil {
-		p.Log.Println("Could not marshal the data", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("content-type", "application/json; charset=utf8")
-	w.WriteHeader(http.StatusCreated)
-	if _, err := w.Write(data); err != nil {
-		p.Log.Println("Could not write to the client", err)
-		w.WriteHeader(http.StatusInternalServerError)
+	if err := web.Response(w, prod, http.StatusCreated); err != nil {
+		p.Log.Println("Response to the user failed", err)
 		return
 	}
 }
