@@ -6,6 +6,8 @@ import (
 	"github.com/jmoiron/sqlx"
 	"log"
 	"net/http"
+
+	"github.com/go-chi/chi"
 )
 
 // ProductService os
@@ -14,8 +16,8 @@ type ProductService struct {
 	Log *log.Logger
 }
 
-// Product returns all the products stored in the database
-func (p *ProductService) Product(w http.ResponseWriter, r *http.Request) {
+// List returns all the products stored in the database
+func (p *ProductService) List(w http.ResponseWriter, r *http.Request) {
 	list, err := product.List(p.DB)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -31,5 +33,35 @@ func (p *ProductService) Product(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(data)
+	_, err = w.Write(data)
+	if err != nil {
+		p.Log.Println("Could not write to the browser", err)
+		return
+	}
+}
+
+
+// Retrieve returns a product to the browser
+func (p *ProductService) Retrieve(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	prod, err := product.Retrieve(p.DB, id)
+	if err != nil {
+		p.Log.Println("Could not receive the product", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	data, err := json.MarshalIndent(prod, "", "   ")
+	if err != nil {
+		p.Log.Println("Could not marshal the product", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	_, err = w.Write(data)
+	if err != nil {
+		p.Log.Println("Could not response the result", err)
+		return
+	}
 }

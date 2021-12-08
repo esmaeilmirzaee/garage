@@ -26,6 +26,7 @@ func main() {
 
 func run() error {
 	log := log.New(os.Stdout, "SALES | ", log.LstdFlags|log.Lmicroseconds|log.Llongfile)
+
 	var cfg struct {
 		Web struct {
 			Address         string        `conf:"default:localhost:5000"`
@@ -80,17 +81,13 @@ func run() error {
 		return errors.Wrap(err, "Could not connect to database.")
 	}
 
-	ps := handlers.ProductService{
-		DB: db,
-		Log: log,
-	}
 
 	// Setup applications
 	api := http.Server{
 		Addr:         cfg.Web.Address,
 		ReadTimeout:  cfg.Web.ReadTimeout,
 		WriteTimeout: cfg.Web.WriteTimeout,
-		Handler:      http.HandlerFunc(ps.Product),
+		Handler:      handlers.API(log, db),
 	}
 
 	serverErrors := make(chan error, 1)
