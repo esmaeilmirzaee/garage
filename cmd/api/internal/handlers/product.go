@@ -42,7 +42,7 @@ func (p *ProductService) Retrieve(w http.ResponseWriter, r *http.Request) error 
 // Create decodes a json document from a POST request and creates a new Product.
 func (p *ProductService) Create(w http.ResponseWriter, r *http.Request) error {
 	var np product.NewProduct
-	if err := web.Decode(r, np); err != nil {
+	if err := web.Decode(r, &np); err != nil {
 		return err
 	}
 
