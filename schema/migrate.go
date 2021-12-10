@@ -14,17 +14,12 @@ var migrations = []darwin.Migration{
 	{
 		Version: 1,
 		Description: "Add products",
-		Script: `
-				CREATE TABLE products (
-					product_id UUID,
-					name	TEXT,
-					cost 	INT,
-					quantity	INT,
-					created_at	TIMESTAMP,
-					updated_at	TIMESTAMP,
-
-					PRIMARY KEY (product_id)
-				);`,
+		Script: `CREATE TABLE products (product_id UUID, name TEXT, cost INT, quantity INT, created_at TIMESTAMP, updated_at TIMESTAMP, PRIMARY KEY (product_id));`,
+	},
+	{
+		Version: 2,
+		Description: "Create sales tables",
+		Script: `CREATE TABLE sales (sale_id UUID, product_id UUId, paid INT, quantity INT, created_at TIMESTAMP, updated_at TIMESTAMP,  PRIMARY KEY (sale_id), FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE);`,
 	},
 }
 
@@ -37,15 +32,3 @@ func Migrate(db *sqlx.DB) error {
 
 	return d.Migrate()
 }
-
-
-
-
-
-
-
-
-
-
-
-
