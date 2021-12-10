@@ -75,5 +75,17 @@ func (p *ProductService) ListSales(w http.ResponseWriter, r *http.Request) error
 
 // AddSale creates a new Sale for a Produce.
 func (p *ProductService) AddSale(w http.ResponseWriter, r *http.Request) error {
-	return nil
+	var ns product.NewSale
+	productID := chi.URLParam(r, "id")
+
+	if err := web.Decode(r, &ns); err != nil {
+		return errors.Wrap(err, "decoding new sale")
+	}
+
+	sale, err := product.AddSale(r.Context(), p.DB, productID, ns, time.Now())
+	if err != nil {
+		return errors.Wrap(err, "adding new sale")
+	}
+	
+	return web.Respond(w, sale, http.StatusCreated)
 }
