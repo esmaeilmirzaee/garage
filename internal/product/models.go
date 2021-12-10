@@ -23,10 +23,9 @@ type NewProduct struct {
 type Sale struct {
 	ID string `db:"sale_id" json:"id"`
 	ProductID string `db:"product_id" json:"product_id"`
-	Paid string `db:"paid" json:"paid"`
+	Paid int `db:"paid" json:"paid"`
 	Quantity int `db:"quantity" json:"quantity"`
 	CreatedAt	time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt	time.Time `db:"updated_at" json:"updated_at"`
 }
 
 // NewSale is what we require from clients to make a new Sale.

@@ -28,7 +28,6 @@ func (p *ProductService) List(w http.ResponseWriter, r *http.Request) error {
 	return web.Respond(w, list, http.StatusOK)
 }
 
-
 // Retrieve returns a product to the browser
 func (p *ProductService) Retrieve(w http.ResponseWriter, r *http.Request) error {
 	id := chi.URLParam(r, "id")
@@ -60,4 +59,21 @@ func (p *ProductService) Create(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return web.Respond(w, prod, http.StatusCreated)
+}
+
+// ListSales returns all sales for a Product.
+func (p *ProductService) ListSales(w http.ResponseWriter, r *http.Request) error {
+	id := chi.URLParam(r, "id")
+
+	lists, err := product.ListSales(r.Context(), p.DB, id)
+	if err != nil {
+		return errors.Wrap(err, "getting sales list")
+	}
+
+	return web.Respond(w, lists, http.StatusOK)
+}
+
+// AddSale creates a new Sale for a Produce.
+func (p *ProductService) AddSale(w http.ResponseWriter, r *http.Request) error {
+	return nil
 }

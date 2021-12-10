@@ -19,7 +19,7 @@ var migrations = []darwin.Migration{
 	{
 		Version: 2,
 		Description: "Create sales tables",
-		Script: `CREATE TABLE sales (sale_id UUID, product_id UUId, paid INT, quantity INT, created_at TIMESTAMP, updated_at TIMESTAMP,  PRIMARY KEY (sale_id), FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE);`,
+		Script: `CREATE TABLE sales (sale_id UUID, product_id UUId, paid INT, quantity INT, created_at TIMESTAMP,   PRIMARY KEY (sale_id), FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE);`,
 	},
 }
 
