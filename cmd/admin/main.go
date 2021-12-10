@@ -5,6 +5,7 @@ import (
 	"github.com/ardanlabs/conf"
 	"github.com/esmaeilmirzaee/grage/internal/platform/database"
 	"github.com/esmaeilmirzaee/grage/schema"
+	"github.com/google/uuid"
 	"log"
 	"os"
 
@@ -62,6 +63,13 @@ func main() {
 			log.Fatalln("main: Could not seed the database.", err)
 		}
 		log.Println("main: Seed is complete")
+		return
+	case "uuid":
+		var newUUID uuid.UUID
+		for i := 0; i < 10; i++ {
+			newUUID = uuid.New()
+			fmt.Println(newUUID)
+		}
 		return
 	}
 }

@@ -19,7 +19,9 @@ var (
 // List queries a database for products
 func List(ctx context.Context, db *sqlx.DB) ([]Product, error) {
 	var list []Product
-	const q = "SELECT product_id, name, cost, quantity, created_at, updated_at FROM products;"
+	const q = `SELECT p.product_id, p.name, p.cost, p.quantity, COALESCE(SUM(s.quantity), 0) AS sold, 
+COALESCE(SUM(s.paid), 0) AS revenue, p.created_at, 
+p.updated_at FROM products AS p LEFT JOIN sales AS s on p.product_id = s.product_id GROUP BY p.product_id;`
 
 	if err := db.SelectContext(ctx, &list, q); err != nil {
 		log.Println("internal: Could not query the database", err)
@@ -36,7 +38,11 @@ func Retrieve(ctx context.Context, db *sqlx.DB, id string) (*Product, error) {
 	}
 
 	var p Product
-	q := `SELECT product_id, name, cost, quantity, created_at, updated_at FROM products WHERE product_id = $1`
+	q := `SELECT p.product_id, p.name, p.cost, p.quantity, COALESCE(SUM(s.paid), 0) AS revenue, 
+COALESCE(SUM(s.quantity), 0) AS sold, 
+p.created_at, 
+p.updated_at FROM products AS p LEFT JOIN sales AS s ON s.product_id = p.product_id WHERE p.product_id = $1 GROUP BY p.
+product_id`
 
 	if err := db.GetContext(ctx, &p, q, id); err != nil {
 		if err == sql.ErrNoRows {
@@ -50,7 +56,6 @@ func Retrieve(ctx context.Context, db *sqlx.DB, id string) (*Product, error) {
 
 // Create makes a new Product.
 func Create(ctx context.Context, db *sqlx.DB, np NewProduct, now time.Time) (*Product, error) {
-	log.Println(uuid.New(), uuid.NewString())
 	p := Product{
 		ID: uuid.New().String(),
 		Name: np.Name,
@@ -68,4 +73,45 @@ $5, $6)`
 	}
 
 	return &p, nil
+}
+
+// AddSale creates a new Sale.
+func AddSale(ctx context.Context, db *sqlx.DB, ProductID string, ns NewSale,
+	now time.Time) (*NewSale,
+	error) {
+	if _, err := uuid.Parse(ProductID); err != nil {
+		return nil, ErrInvalidUUID
+	}
+
+	s := Sale{
+		ID: uuid.New().String(),
+		ProductID: ProductID,
+		Paid: ns.Paid,
+		Quantity: ns.Quantity,
+		CreatedAt: now,
+	}
+
+	const q = `INSERT INTO sales (sale_id, product_id, paid, quantity, created_at) VALUES ($1, $2, $3, $4, $5);`
+
+	if _, err := db.ExecContext(ctx, q, s.ID, s.ProductID, s.Paid, s.Quantity, s.CreatedAt); err != nil {
+		return nil, errors.Wrap(err, "Could not create new sale")
+	}
+
+	return &ns, nil
+}
+
+// ListSales returns all sales for a Product.
+func ListSales(ctx context.Context, db *sqlx.DB, ProductID string) ([]Sale, error) {
+	if _, err := uuid.Parse(ProductID); err != nil {
+		return nil, ErrInvalidUUID
+	}
+
+	q := `SELECT product_id, sale_id, paid, quantity, created_at FROM sales WHERE product_id = $1;`
+	var list []Sale
+
+	if err := db.SelectContext(ctx, &list, q, ProductID); err != nil {
+		return nil, errors.Wrap(err, "Could not query the database")
+	}
+
+	return list, nil
 }
