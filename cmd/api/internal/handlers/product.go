@@ -86,6 +86,6 @@ func (p *ProductService) AddSale(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.Wrap(err, "adding new sale")
 	}
-	
+
 	return web.Respond(w, sale, http.StatusCreated)
 }

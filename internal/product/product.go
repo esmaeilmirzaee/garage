@@ -19,7 +19,9 @@ var (
 // List queries a database for products
 func List(ctx context.Context, db *sqlx.DB) ([]Product, error) {
 	var list []Product
-	const q = "SELECT product_id, name, cost, quantity, created_at, updated_at FROM products;"
+	const q = `SELECT p.product_id, p.name, p.cost, p.quantity, SUM(s.quantity) AS sold, 
+SUM(s.paid) AS revenue, p.created_at, 
+p.updated_at FROM products AS p LEFT JOIN sales AS s on p.product_id = s.product_id GROUP BY p.product_id;`
 
 	if err := db.SelectContext(ctx, &list, q); err != nil {
 		log.Println("internal: Could not query the database", err)
