@@ -14,9 +14,12 @@ import "github.com/jmoiron/sqlx"
 // Note that database servers besides PostgreSQL may not support running multiple queries
 // as part of the same execution so this single large constant may need to be broken up.
 
-const seeds = `TRUNCATE TABLE products; INSERT INTO products (product_id, name, cost, quantity, created_at, 
-updated_at) VALUES ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Comic books', 50, 42, '2021-01-12 00:00:01.000001+00', 
-'2021-01-12 00:00:01.000001+00'),('d2cabc99-9c0b-4ef8-bb6a-2bb9bd380b2c', 'McDonalds toys', 75, 120, '2021-01-12 00:00:01.000001+00', '2021-01-12 00:00:01.000001+00') ON CONFLICT DO NOTHING;`
+const seeds = `INSERT INTO products (product_id, name, cost, quantity, created_at, 
+updated_at) VALUES ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Comic books', 50, 42, NOW(), 
+NOW()),('d2cabc99-9c0b-4ef8-bb6a-2bb9bd380b2c', 'McDonalds toys', 75, 120, 
+NOW(), NOW()) ON CONFLICT DO NOTHING; INSERT INTO sales (sale_id,
+product_id, paid, quantity, created_at, updated_at) VALUES ('6f70b8b7-90bf-4b43-a7c7-6c3051f5c7f1', 'd2cabc99-9c0b-4ef8-bb6a-2bb9bd380b2c', 2, 100, NOW(), NOW()), ('df566f1a-d511-41eb-b612-0f8a79f7cd3a', 'd2cabc99-9c0b-4ef8-bb6a-2bb9bd380b2c', 5, 250, NOW(), 
+NOW()), ('2feb6493-ea34-49d2-b696-11928343f8d3', 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 3, 225, NOW(), NOW());`
 
 // Seed runs the set of seed-data queries against db. The queries are ran in a
 // transaction and rolled back if any fail.
@@ -35,19 +38,3 @@ func Seed(db *sqlx.DB) error {
 
 	return tx.Commit()
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
