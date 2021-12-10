@@ -38,7 +38,11 @@ func Retrieve(ctx context.Context, db *sqlx.DB, id string) (*Product, error) {
 	}
 
 	var p Product
-	q := `SELECT product_id, name, cost, quantity, created_at, updated_at FROM products WHERE product_id = $1`
+	q := `SELECT p.product_id, p.name, p.cost, p.quantity, COALESCE(SUM(s.paid), 0) AS revenue, 
+COALESCE(SUM(s.quantity), 0) AS sold, 
+p.created_at, 
+p.updated_at FROM products AS p LEFT JOIN sales AS s ON s.product_id = p.product_id WHERE p.product_id = $1 GROUP BY p.
+product_id`
 
 	if err := db.GetContext(ctx, &p, q, id); err != nil {
 		if err == sql.ErrNoRows {
