@@ -16,6 +16,8 @@ import (
 	"github.com/pkg/errors"
 
 	_ "github.com/ardanlabs/conf"
+
+	_ "net/http/pprof" // Register for /debug/pprof handlers
 )
 
 func main() {
@@ -30,6 +32,7 @@ func run() error {
 	var cfg struct {
 		Web struct {
 			Address         string        `conf:"default:localhost:5000"`
+			Debug           string        `conf:"default:localhost:6060"`
 			ReadTimeout     time.Duration `conf:"default:5s"`
 			WriteTimeout    time.Duration `conf:"default:5s"`
 			ShutdownTimeout time.Duration `conf:"default:5s"`
@@ -81,7 +84,15 @@ func run() error {
 		return errors.Wrap(err, "Could not connect to database.")
 	}
 
-	// Setup applications
+	// =============================================================
+	// Start Debug Service
+	go func() {
+		log.Println("main: Profile API is listening on %v", cfg.Web.Debug)
+		err := http.ListenAndServe(cfg.Web.Debug, http.DefaultServeMux)
+		log.Println("main: Debug service ended %v", err)
+	}()
+
+	// Start API Service
 	api := http.Server{
 		Addr:         cfg.Web.Address,
 		ReadTimeout:  cfg.Web.ReadTimeout,
