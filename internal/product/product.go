@@ -12,7 +12,7 @@ import (
 
 // Predefined errors for known failure scenario.
 var (
-	ErrNotFound = errors.New("Not found")
+	ErrNotFound    = errors.New("Not found")
 	ErrInvalidUUID = errors.New("Invalid ID")
 )
 
@@ -57,10 +57,10 @@ product_id`
 // Create makes a new Product.
 func Create(ctx context.Context, db *sqlx.DB, np NewProduct, now time.Time) (*Product, error) {
 	p := Product{
-		ID: uuid.New().String(),
-		Name: np.Name,
-		Cost: np.Cost,
-		Quantity: np.Quantity,
+		ID:        uuid.New().String(),
+		Name:      np.Name,
+		Cost:      np.Cost,
+		Quantity:  np.Quantity,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
@@ -84,10 +84,10 @@ func AddSale(ctx context.Context, db *sqlx.DB, ProductID string, ns NewSale,
 	}
 
 	s := Sale{
-		ID: uuid.New().String(),
+		ID:        uuid.New().String(),
 		ProductID: ProductID,
-		Paid: ns.Paid,
-		Quantity: ns.Quantity,
+		Paid:      ns.Paid,
+		Quantity:  ns.Quantity,
 		CreatedAt: now,
 	}
 
@@ -114,4 +114,37 @@ func ListSales(ctx context.Context, db *sqlx.DB, ProductID string) ([]Sale, erro
 	}
 
 	return list, nil
+}
+
+// Update modifies data about a Product. It will error if the specified
+// ID is invalid or does not reference an existing Product.
+func Update(ctx context.Context, db *sqlx.DB, id string, update UpdateProduct, now time.Time) error {
+
+	p, err := Retrieve(ctx, db, id)
+	if err != nil {
+		return err
+	}
+
+	if update.Name != nil {
+		p.Name = *update.Name
+	}
+
+	if update.Cost != nil {
+		p.Cost = *update.Cost
+	}
+
+	if update.Quantity != nil {
+		p.Quantity = *update.Quantity
+	}
+
+	p.UpdatedAt = now
+
+	const q = `UPDATE products SET "name" = $2, "cost" = $3, "quantity" = $4, "updated_at" = $5 WHERE product_id = $1;`
+
+	_, err = db.ExecContext(ctx, q, id, p.Name, p.Cost, p.Quantity, p.UpdatedAt)
+	if err != nil {
+		return errors.Wrap(err, "Updating failed")
+	}
+
+	return nil
 }
