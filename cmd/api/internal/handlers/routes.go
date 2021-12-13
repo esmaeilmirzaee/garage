@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/esmaeilmirzaee/grage/internal/middleware"
 	"github.com/esmaeilmirzaee/grage/internal/platform/web"
 	"github.com/jmoiron/sqlx"
 	"log"
@@ -9,7 +10,7 @@ import (
 
 // API constructs a handler that knows about all routes
 func API(log *log.Logger, db *sqlx.DB) http.Handler {
-	app := web.NewApp(log)
+	app := web.NewApp(log, middleware.Errors(log))
 
 	c := Check{
 		DB: db,
