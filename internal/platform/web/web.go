@@ -33,11 +33,7 @@ func (a *App) Handle(method, pattern string, h Handler) {
 
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		if err := h(w, r); err != nil {
-			a.log.Printf("Error: %v", err)
-
-			if err := RespondError(w, err); err != nil {
-				a.log.Printf("Error: %v", err)
-			}
+			a.log.Printf("Unhandled Errors: %v", err)
 		}
 	}
 

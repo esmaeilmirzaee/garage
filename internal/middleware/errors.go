@@ -17,7 +17,7 @@ func Errors(log *log.Logger) web.Middleware {
 			// Run the handler chain and catch any propagated error.
 			if err := before(w, r); err != nil {
 				// log the error
-				log.Println("Error %+v", err)
+				log.Printf("Error %v, ", err)
 
 				// Respond to the error
 				if err := web.RespondError(w, err); err != nil {
