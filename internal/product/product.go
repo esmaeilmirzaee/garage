@@ -75,6 +75,53 @@ $5, $6)`
 	return &p, nil
 }
 
+// Update modifies data about a Product. It will error if the specified
+// ID is invalid or does not reference an existing Product.
+func Update(ctx context.Context, db *sqlx.DB, id string, update UpdateProduct, now time.Time) error {
+
+	p, err := Retrieve(ctx, db, id)
+	if err != nil {
+		return err
+	}
+
+	if update.Name != nil {
+		p.Name = *update.Name
+	}
+
+	if update.Cost != nil {
+		p.Cost = *update.Cost
+	}
+
+	if update.Quantity != nil {
+		p.Quantity = *update.Quantity
+	}
+
+	p.UpdatedAt = now
+
+	const q = `UPDATE products SET "name" = $2, "cost" = $3, "quantity" = $4, "updated_at" = $5 WHERE product_id = $1;`
+
+	_, err = db.ExecContext(ctx, q, id, p.Name, p.Cost, p.Quantity, p.UpdatedAt)
+	if err != nil {
+		return errors.Wrap(err, "Updating failed")
+	}
+
+	return nil
+}
+
+// Delete removes a Product
+func Delete(ctx context.Context, db *sqlx.DB, ProductID string) error {
+	if _, err := uuid.Parse(ProductID); err != nil {
+		return ErrInvalidUUID
+	}
+	const q = `DELETE FROM products WHERE product_id = $1`
+
+	if _, err := db.ExecContext(ctx, q, ProductID); err != nil {
+		return errors.Wrapf(err, "deleting a product %q", ProductID)
+	}
+
+	return nil
+}
+
 // AddSale creates a new Sale.
 func AddSale(ctx context.Context, db *sqlx.DB, ProductID string, ns NewSale,
 	now time.Time) (*NewSale,
@@ -114,37 +161,4 @@ func ListSales(ctx context.Context, db *sqlx.DB, ProductID string) ([]Sale, erro
 	}
 
 	return list, nil
-}
-
-// Update modifies data about a Product. It will error if the specified
-// ID is invalid or does not reference an existing Product.
-func Update(ctx context.Context, db *sqlx.DB, id string, update UpdateProduct, now time.Time) error {
-
-	p, err := Retrieve(ctx, db, id)
-	if err != nil {
-		return err
-	}
-
-	if update.Name != nil {
-		p.Name = *update.Name
-	}
-
-	if update.Cost != nil {
-		p.Cost = *update.Cost
-	}
-
-	if update.Quantity != nil {
-		p.Quantity = *update.Quantity
-	}
-
-	p.UpdatedAt = now
-
-	const q = `UPDATE products SET "name" = $2, "cost" = $3, "quantity" = $4, "updated_at" = $5 WHERE product_id = $1;`
-
-	_, err = db.ExecContext(ctx, q, id, p.Name, p.Cost, p.Quantity, p.UpdatedAt)
-	if err != nil {
-		return errors.Wrap(err, "Updating failed")
-	}
-
-	return nil
 }

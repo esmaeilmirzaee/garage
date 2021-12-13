@@ -85,6 +85,22 @@ func (p *ProductService) Update(w http.ResponseWriter, r *http.Request) error {
 	return web.Respond(w, nil, http.StatusNoContent)
 }
 
+// Delete removes a single Product identified by an ID in the request URL.
+func (p *ProductService) Delete(w http.ResponseWriter, r *http.Request) error {
+	id := chi.URLParam(r, "id")
+
+	if err := product.Delete(r.Context(), p.DB, id); err != nil {
+		switch err {
+		case product.ErrInvalidUUID:
+			return web.NewRequestError(err, http.StatusBadRequest)
+		default:
+			return errors.Wrapf(err, "deleting product %q", id)
+		}
+	}
+
+	return web.Respond(w, nil, http.StatusNoContent)
+}
+
 // ListSales returns all sales for a Product.
 func (p *ProductService) ListSales(w http.ResponseWriter, r *http.Request) error {
 	id := chi.URLParam(r, "id")
