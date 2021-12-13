@@ -17,7 +17,8 @@ import (
 
 	_ "github.com/ardanlabs/conf"
 
-	_ "net/http/pprof" // Register for /debug/pprof handlers
+	_ "expvar"         // Register the /debug/vars handler | metric middleware
+	_ "net/http/pprof" // Register the /debug/pprof handler | Profiling middleware
 )
 
 func main() {
