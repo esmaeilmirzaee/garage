@@ -14,7 +14,7 @@ import (
 
 // ProductService is used to add database and log to a request.
 type ProductService struct {
-	DB *sqlx.DB
+	DB  *sqlx.DB
 	Log *log.Logger
 }
 
@@ -53,12 +53,36 @@ func (p *ProductService) Create(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	 prod, err := product.Create(r.Context(), p.DB, np, time.Now())
-	 if err != nil {
-		 return err
+	prod, err := product.Create(r.Context(), p.DB, np, time.Now())
+	if err != nil {
+		return err
 	}
 
 	return web.Respond(w, prod, http.StatusCreated)
+}
+
+// Update decodes the body of a request to update an existing product. The ID
+// of the product is part of the request URL.
+func (p *ProductService) Update(w http.ResponseWriter, r *http.Request) error {
+	id := chi.URLParam(r, "id")
+
+	var update product.UpdateProduct
+	if err := web.Decode(r, &update); err != nil {
+		return errors.Wrap(err, "decoding product update")
+	}
+
+	if err := product.Update(r.Context(), p.DB, id, update, time.Now()); err != nil {
+		switch err {
+		case product.ErrNotFound:
+			return web.NewRequestError(err, http.StatusNotFound)
+		case product.ErrInvalidUUID:
+			return web.NewRequestError(err, http.StatusBadRequest)
+		default:
+			return errors.Wrapf(err, "updating product %q", id)
+		}
+	}
+
+	return web.Respond(w, nil, http.StatusNoContent)
 }
 
 // ListSales returns all sales for a Product.

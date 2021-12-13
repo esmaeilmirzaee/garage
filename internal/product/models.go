@@ -30,7 +30,7 @@ type NewProduct struct {
 type UpdateProduct struct {
 	Name     *string `json:"name" validate:"omitempty"`
 	Cost     *int    `json:"cost" validate:"omitempty,gte=0"`
-	Quantity *int    `json:"quantity" validate:"omitempty, gte=1"`
+	Quantity *int    `json:"quantity" validate:"omitempty,gte=1"`
 }
 
 // Sale represents sale model in our database.

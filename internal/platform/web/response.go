@@ -11,6 +11,10 @@ func Respond(w http.ResponseWriter, value interface{}, statusCode int) error {
 	w.Header().Set("content-type", "application/json; charset=urf8")
 	w.WriteHeader(statusCode)
 
+	if statusCode == http.StatusNoContent {
+		return nil
+	}
+
 	data, err := json.Marshal(value)
 	if err != nil {
 		return errors.Wrap(err, "Could not marshal the value")
