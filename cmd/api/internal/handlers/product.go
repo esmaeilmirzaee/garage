@@ -25,7 +25,7 @@ func (p *ProductService) List(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	return web.Respond(w, list, http.StatusOK)
+	return web.Respond(r.Context(), w, list, http.StatusOK)
 }
 
 // Retrieve returns a product to the browser
@@ -43,7 +43,7 @@ func (p *ProductService) Retrieve(w http.ResponseWriter, r *http.Request) error 
 		}
 	}
 
-	return web.Respond(w, prod, http.StatusOK)
+	return web.Respond(r.Context(), w, prod, http.StatusOK)
 }
 
 // Create decodes a json document from a POST request and creates a new Product.
@@ -58,7 +58,7 @@ func (p *ProductService) Create(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	return web.Respond(w, prod, http.StatusCreated)
+	return web.Respond(r.Context(), w, prod, http.StatusCreated)
 }
 
 // Update decodes the body of a request to update an existing product. The ID
@@ -82,7 +82,7 @@ func (p *ProductService) Update(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	return web.Respond(w, nil, http.StatusNoContent)
+	return web.Respond(r.Context(), w, nil, http.StatusNoContent)
 }
 
 // Delete removes a single Product identified by an ID in the request URL.
@@ -98,7 +98,7 @@ func (p *ProductService) Delete(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	return web.Respond(w, nil, http.StatusNoContent)
+	return web.Respond(r.Context(), w, nil, http.StatusNoContent)
 }
 
 // ListSales returns all sales for a Product.
@@ -110,7 +110,7 @@ func (p *ProductService) ListSales(w http.ResponseWriter, r *http.Request) error
 		return errors.Wrap(err, "getting sales list")
 	}
 
-	return web.Respond(w, lists, http.StatusOK)
+	return web.Respond(r.Context(), w, lists, http.StatusOK)
 }
 
 // AddSale creates a new Sale for a Produce.
@@ -127,5 +127,5 @@ func (p *ProductService) AddSale(w http.ResponseWriter, r *http.Request) error {
 		return errors.Wrap(err, "adding new sale")
 	}
 
-	return web.Respond(w, sale, http.StatusCreated)
+	return web.Respond(r.Context(), w, sale, http.StatusCreated)
 }
