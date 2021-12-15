@@ -1,18 +1,30 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/ardanlabs/conf"
+	"github.com/esmaeilmirzaee/grage/internal/auth"
 	"github.com/esmaeilmirzaee/grage/internal/platform/database"
-	schema2 "github.com/esmaeilmirzaee/grage/internal/schema"
+	"github.com/esmaeilmirzaee/grage/internal/schema"
+	"github.com/esmaeilmirzaee/grage/internal/user"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"log"
 	"os"
+	"time"
 
 	_ "github.com/lib/pq"
 )
 
 func main() {
+	if err := run(); err != nil {
+		log.Printf("error %s", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	// =============================================================
 	// Configuration
 	var cfg struct {
@@ -30,46 +42,126 @@ func main() {
 		if err == conf.ErrHelpWanted {
 			usage, err := conf.Usage("SALES | ", &cfg)
 			if err != nil {
-				log.Fatalln("main: generating usage %v", err)
+				return errors.Wrap(err, "main: generating usage")
 			}
 			fmt.Println(usage)
-			return
+			return nil
 		}
-		log.Fatalf("error: Could not parse config %s", err)
+		return errors.Wrap(err, "error: parsing")
 	}
 
-	// Setup dependencies
-	db, err := database.Open(database.Config{
+	// This is used for multiple commands below.
+	dbConfig := database.Config{
 		Host:       cfg.DB.Host,
 		Name:       cfg.DB.Name,
 		User:       cfg.DB.User,
 		Password:   cfg.DB.Password,
 		DisableTLS: cfg.DB.DisableTLS,
-	})
-
-	if err != nil {
-		log.Fatalln("main: Could not connect to database", err)
 	}
 
+	var err error
 	switch cfg.Args.Num(0) {
 	case "migrate":
-		if err := schema2.Migrate(db); err != nil {
-			log.Fatalln("main: Could not migrate database.", err)
-		}
-		log.Println("main: Migrate is complete")
-		return
+		err = migrate(dbConfig)
 	case "seed":
-		if err := schema2.Seed(db); err != nil {
-			log.Fatalln("main: Could not seed the database.", err)
-		}
-		log.Println("main: Seed is complete")
-		return
+		err = seed(dbConfig)
+	case "useradd":
+		err = useradd(dbConfig, cfg.Args.Num(1))
 	case "uuid":
 		var newUUID uuid.UUID
 		for i := 0; i < 10; i++ {
 			newUUID = uuid.New()
 			fmt.Println(newUUID)
 		}
-		return
+		return nil
+	default:
+		err = errors.New("Must specify a command")
 	}
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func migrate(dbConfig database.Config) error {
+	db, err := database.Open(dbConfig)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	if err := schema.Migrate(db); err != nil {
+		return err
+	}
+
+	fmt.Println("Migrating is complete")
+	return nil
+}
+
+func seed(dbConfig database.Config) error {
+	db, err := database.Open(dbConfig)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	if err := schema.Seed(db); err != nil {
+		return err
+	}
+
+	fmt.Println("Seeding is complete")
+	return nil
+}
+
+func useradd(dbConfig database.Config, email string) error {
+	db, err := database.Open(dbConfig)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	if email == "" {
+		return errors.New("User creation must be called with an additional argument | email")
+	}
+
+	fmt.Print("Please enter password: ")
+	var password string
+	if _, err := fmt.Scanf("%v\n", &password); err != nil {
+		return errors.Wrap(err, "entering password")
+	}
+	if password == "" {
+		fmt.Println("Canceling")
+		return nil
+	}
+
+	fmt.Printf("Admin user will be created with email %q", email)
+	fmt.Printf("Continue? (Y/N)")
+	var confirm byte
+	if _, err := fmt.Scanf("%c\n", &confirm); err != nil {
+		return errors.Wrap(err, "processing response")
+	}
+
+	if string(confirm) == "y" || string(confirm) == "Y" || string(confirm) != "n" || string(confirm) != "N" {
+		fmt.Println("Canceling")
+		return nil
+	}
+
+	ctx := context.Background()
+	nu := user.NewUser{
+		Name:     email,
+		Password: password,
+		Email:    email,
+		Roles:    []string{auth.RoleAdmin, auth.RoleUser},
+	}
+
+	user, err := user.Create(ctx, db, nu, time.Now())
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("User created %q", user.ID)
+
+	return nil
 }
