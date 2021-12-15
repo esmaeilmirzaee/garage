@@ -24,6 +24,7 @@ type Values struct {
 
 // ************************************************************
 
+// Handler is our customized handler
 type Handler func(ctx context.Context, w http.ResponseWriter, r *http.Request) error
 
 // App is the entrypoint for all web applications
