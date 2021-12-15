@@ -44,8 +44,14 @@ func NewApp(logger *log.Logger, mw ...Middleware) *App {
 }
 
 // Handle connects a method and URL pattern to a particular application handler.
-func (a *App) Handle(method, pattern string, h Handler) {
+// To handle authorization mechanism a new argument which is a middleware should
+// be part of the following handler
+func (a *App) Handle(method, pattern string, h Handler, mw ...Middleware) {
 
+	// First wrap specific middleware around this handler
+	h = wrapMiddleware(mw, h)
+
+	// Add the application's general middleware to the handler chain.
 	// Everytime a request comes from the routes would be
 	// wrapped via middleware.
 	h = wrapMiddleware(a.mw, h)
