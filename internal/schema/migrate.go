@@ -18,7 +18,14 @@ var migrations = []darwin.Migration{
 	{
 		Version:     2,
 		Description: "Create sales tables",
-		Script:      `CREATE TABLE sales (sale_id UUID, product_id UUId, paid INT, quantity INT, created_at TIMESTAMP,   PRIMARY KEY (sale_id), FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE);`,
+		Script: `CREATE TABLE sales (sale_id UUID, product_id UUID, paid INT, quantity INT, 
+created_at TIMESTAMP,   PRIMARY KEY (sale_id), FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE);`,
+	},
+	{
+		Version:     3,
+		Description: "Create users table",
+		Script: `CREATE TABLE IF NOT EXISTS users (user_id UUID, name TEXT, email TEXT UNIQUE, password TEXT, 
+roles TEXT[], created_at TIMESTAMP, updated_at TIMESTAMP, PRIMARY KEY (user_id));`,
 	},
 }
 
