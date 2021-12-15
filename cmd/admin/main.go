@@ -143,7 +143,7 @@ func useradd(dbConfig database.Config, email string) error {
 		return errors.Wrap(err, "processing response")
 	}
 
-	if string(confirm) == "y" || string(confirm) == "Y" || string(confirm) != "n" || string(confirm) != "N" {
+	if string(confirm) != "y" || string(confirm) != "Y" && string(confirm) == "n" || string(confirm) == "N" {
 		fmt.Println("Canceling")
 		return nil
 	}

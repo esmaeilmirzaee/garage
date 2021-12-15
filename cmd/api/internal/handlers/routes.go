@@ -17,11 +17,15 @@ func API(log *log.Logger, db *sqlx.DB) http.Handler {
 	}
 	app.Handle(http.MethodGet, "/v1/api/health", c.Health)
 
+	u := Users{
+		DB: db,
+	}
+	app.Handle(http.MethodGet, "/v1/api/users", u.Token)
+
 	p := ProductService{
 		DB:  db,
 		Log: log,
 	}
-
 	app.Handle(http.MethodGet, "/v1/api/products", p.List)
 	app.Handle(http.MethodPost, "/v1/api/products", p.Create)
 	app.Handle(http.MethodGet, "/v1/api/products/{id}", p.Retrieve)
