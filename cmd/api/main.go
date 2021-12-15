@@ -52,7 +52,7 @@ func run() error {
 		Auth struct {
 			PrivateKeyFile string `conf:"default:1"`
 			KeyID          string `conf:"default:private.pem"`
-			Algorithm      string `conf:"default:RSA256"`
+			Algorithm      string `conf:"default:RS256"`
 		}
 	}
 
@@ -90,7 +90,7 @@ func run() error {
 
 	// =============================================================
 	// Setup dependencies
-	// Database definition
+	// Start database
 	db, err := database.Open(database.Config{
 		Host:       cfg.DB.Host,
 		Name:       cfg.DB.Name,
@@ -149,7 +149,7 @@ func run() error {
 	return nil
 }
 
-// createAuth
+// createAuth creates an x509 private key.
 func createAuth(privateKeyFile, keyID, algorithm string) (*auth.Authenticator, error) {
 	keyContents, err := ioutil.ReadFile(privateKeyFile)
 	if err != nil {
