@@ -38,3 +38,15 @@ func NewClaims(subject string, roles []string, now time.Time, expires time.Durat
 
 	return c
 }
+
+// HasRole returns true if the Claims has at least one of the provided rols.
+func (c Claims) HasRole(roles ...string) bool {
+	for _, has := range c.Roles {
+		for _, want := range roles {
+			if has == want {
+				return true
+			}
+		}
+	}
+	return false
+}
