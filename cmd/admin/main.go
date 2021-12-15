@@ -2,6 +2,10 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"github.com/ardanlabs/conf"
 	"github.com/esmaeilmirzaee/grage/internal/auth"
@@ -67,6 +71,8 @@ func run() error {
 		err = seed(dbConfig)
 	case "useradd":
 		err = useradd(dbConfig, cfg.Args.Num(1))
+	case "keygen":
+		err = keygen(cfg.Args.Num(1))
 	case "uuid":
 		var newUUID uuid.UUID
 		for i := 0; i < 10; i++ {
@@ -162,6 +168,39 @@ func useradd(dbConfig database.Config, email string) error {
 	}
 
 	fmt.Printf("User created %q", user.ID)
+
+	return nil
+}
+
+// keygen creates an x509 private key for signing auth token.
+func keygen(path string) error {
+	if path == "" {
+		return errors.New("keygen missing argument for key path")
+	}
+
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return errors.Wrap(err, "generating keys")
+	}
+
+	file, err := os.Create(path)
+	if err != nil {
+		return errors.Wrap(err, "Creating private file")
+	}
+	defer file.Close()
+
+	block := pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(key),
+	}
+
+	if err := pem.Encode(file, &block); err != nil {
+		return errors.Wrap(err, "Encoding to private key")
+	}
+
+	if err := file.Close(); err != nil {
+		return errors.Wrap(err, "Closing private file")
+	}
 
 	return nil
 }
