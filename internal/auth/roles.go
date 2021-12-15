@@ -11,6 +11,12 @@ const (
 	RoleUser  = "USER"
 )
 
+// ctxKey represents the type of value for the context type.
+type ctxKey int
+
+// Key is used to store/retrieve Claims value from a context.Context
+const Key ctxKey = 1
+
 // Claims represents the authorization claims transmitted via a JWT.
 type Claims struct {
 	Roles []string `json:"roles"`
