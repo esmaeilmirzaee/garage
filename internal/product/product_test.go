@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/esmaeilmirzaee/grage/internal/platform/database/databasetest"
 	"github.com/esmaeilmirzaee/grage/internal/product"
-	"github.com/esmaeilmirzaee/grage/schema"
+	"github.com/esmaeilmirzaee/grage/internal/schema"
 	"github.com/google/go-cmp/cmp"
 	"testing"
 	"time"
@@ -14,11 +14,11 @@ import (
 func TestProducts(t *testing.T) {
 	db, cleanup := databasetest.Setup(t)
 	defer cleanup()
-	ctx := context.Background();
+	ctx := context.Background()
 
 	np := product.NewProduct{
-		Name: "Comic Books",
-		Cost: 5,
+		Name:     "Comic Books",
+		Cost:     5,
 		Quantity: 11,
 	}
 
