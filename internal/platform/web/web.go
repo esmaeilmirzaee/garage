@@ -24,7 +24,7 @@ type Values struct {
 
 // ************************************************************
 
-type Handler func(w http.ResponseWriter, r *http.Request) error
+type Handler func(ctx context.Context, w http.ResponseWriter, r *http.Request) error
 
 // App is the entrypoint for all web applications
 type App struct {
@@ -55,11 +55,9 @@ func (a *App) Handle(method, pattern string, h Handler) {
 		v := Values{
 			Start: time.Now(),
 		}
-		ctx := r.Context()
-		ctx = context.WithValue(ctx, KeyValues, &v)
-		r = r.WithContext(ctx)
+		ctx := context.WithValue(r.Context(), KeyValues, &v)
 
-		if err := h(w, r); err != nil {
+		if err := h(ctx, w, r); err != nil {
 			a.log.Printf("Unhandled Errors: %v", err)
 		}
 	}
