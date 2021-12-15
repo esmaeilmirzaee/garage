@@ -48,7 +48,7 @@ updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT DO NOTHING;`
 }
 
 // Authenticate finds a User by their email and verifies their password. On
-// success it returns a Claims value representing this User. The Claims can be
+// success, it returns a Claims value representing this User. The Claims can be
 // used to generate a token for future authentication.
 func Authenticate(ctx context.Context, db *sqlx.DB, now time.Time, email, password string) (auth.Claims, error) {
 	const q = `SELECT user_id, name, email, password, roles, created_at, updated_at FROM users WHERE email = $1;`

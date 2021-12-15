@@ -22,7 +22,7 @@ func Authenticate(authenticator *auth.Authenticator) web.Middleware {
 			// Parse the authorization header. Expected header is of
 			// the format <Bearer> token.
 			parts := strings.Split(r.Header.Get("Authorization"), " ")
-			if len(parts) != 2 || strings.ToLower(parts[0]) != "Bearer" {
+			if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
 				err := errors.New("Expected authorization header format: <Bearer> Token")
 				return web.NewRequestError(err, http.StatusUnauthorized)
 			}
@@ -50,7 +50,7 @@ func HasRole(roles ...string) web.Middleware {
 	// This is the actual middleware function to be executed.
 	f := func(after web.Handler) web.Handler {
 		h := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-			claims, ok := ctx.Value(auth.Key).(*auth.Claims)
+			claims, ok := ctx.Value(auth.Key).(auth.Claims)
 			if !ok {
 				return errors.New("Claims missing from context: HasRole called without/before middleware")
 			}
