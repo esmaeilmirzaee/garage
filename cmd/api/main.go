@@ -2,10 +2,14 @@ package main
 
 import (
 	"context"
+	"crypto/rsa"
 	"fmt"
 	"github.com/ardanlabs/conf"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/esmaeilmirzaee/grage/cmd/api/internal/handlers"
+	"github.com/esmaeilmirzaee/grage/internal/auth"
 	"github.com/esmaeilmirzaee/grage/internal/platform/database"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -45,6 +49,11 @@ func run() error {
 			Host       string `conf:"default:192.168.101.2:5234"`
 			DisableTLS bool   `conf:"default:true"`
 		}
+		Auth struct {
+			PrivateKeyFile string `conf:"default:1"`
+			KeyID          string `conf:"default:private.pem"`
+			Algorithm      string `conf:"default:RS256"`
+		}
 	}
 
 	// =============================================================
@@ -73,7 +82,15 @@ func run() error {
 	log.Printf("main: Config \n%v\n", out)
 
 	// =============================================================
+	// Initialize authentication support
+	authenticator, err := createAuth(cfg.Auth.PrivateKeyFile, cfg.Auth.KeyID, cfg.Auth.Algorithm)
+	if err != nil {
+		return errors.Wrap(err, "constructing authenticator")
+	}
+
+	// =============================================================
 	// Setup dependencies
+	// Start database
 	db, err := database.Open(database.Config{
 		Host:       cfg.DB.Host,
 		Name:       cfg.DB.Name,
@@ -98,7 +115,7 @@ func run() error {
 		Addr:         cfg.Web.Address,
 		ReadTimeout:  cfg.Web.ReadTimeout,
 		WriteTimeout: cfg.Web.WriteTimeout,
-		Handler:      handlers.API(log, db),
+		Handler:      handlers.API(log, db, authenticator),
 	}
 
 	serverErrors := make(chan error, 1)
@@ -130,4 +147,20 @@ func run() error {
 	}
 
 	return nil
+}
+
+// createAuth creates an x509 private key.
+func createAuth(privateKeyFile, keyID, algorithm string) (*auth.Authenticator, error) {
+	keyContents, err := ioutil.ReadFile(privateKeyFile)
+	if err != nil {
+		return nil, errors.Wrap(err, "reading auth private key")
+	}
+
+	key, err := jwt.ParseRSAPrivateKeyFromPEM(keyContents)
+	if err != nil {
+		return nil, errors.Wrap(err, "passing auth private key")
+	}
+
+	public := auth.NewSimpleKeyLookup(keyID, key.Public().(*rsa.PublicKey))
+	return auth.NewAuthenticator(key, keyID, algorithm, public)
 }

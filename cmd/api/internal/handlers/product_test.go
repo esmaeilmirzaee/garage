@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/esmaeilmirzaee/grage/internal/platform/database/databasetest"
-	"github.com/esmaeilmirzaee/grage/schema"
+	"github.com/esmaeilmirzaee/grage/internal/schema"
 	"github.com/google/go-cmp/cmp"
 	"log"
 	"net/http"
@@ -68,20 +68,20 @@ func (p *ProductTests) List(t *testing.T) {
 		t.Fatalf("decoding: %s", err)
 	}
 
-	want := []map[string]interface{} {
+	want := []map[string]interface{}{
 		{
-			"id": "",
-			"name": "Comic Book",
-			"cost": float64(50),
-			"quantity": float64(42),
+			"id":         "",
+			"name":       "Comic Book",
+			"cost":       float64(50),
+			"quantity":   float64(42),
 			"created_at": "",
 			"updated_at": "",
 		},
 		{
-			"id":       "",
-			"name":     "McDonalds Toys",
-			"cost":     float64(75),
-			"quantity": float64(120),
+			"id":         "",
+			"name":       "McDonalds Toys",
+			"cost":       float64(75),
+			"quantity":   float64(120),
 			"created_at": "",
 			"updated_at": "",
 		},
@@ -120,11 +120,11 @@ func (p *ProductTests) ProductCRUD(t *testing.T) {
 			t.Fatal("expected non-empty product date created.")
 		}
 
-		want := map[string]interface{} {
-			"id": created["id"],
-			"name": "product0",
-			"cost": float64(55),
-			"quantity": float64(6),
+		want := map[string]interface{}{
+			"id":         created["id"],
+			"name":       "product0",
+			"cost":       float64(55),
+			"quantity":   float64(6),
 			"created_at": created["created_at"],
 			"updated_at": created["updated_at"],
 		}

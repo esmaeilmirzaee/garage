@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/esmaeilmirzaee/grage/internal/auth"
 	"github.com/esmaeilmirzaee/grage/internal/middleware"
 	"github.com/esmaeilmirzaee/grage/internal/platform/web"
 	"github.com/jmoiron/sqlx"
@@ -9,7 +10,7 @@ import (
 )
 
 // API constructs a handler that knows about all routes
-func API(log *log.Logger, db *sqlx.DB) http.Handler {
+func API(log *log.Logger, db *sqlx.DB, authenticator *auth.Authenticator) http.Handler {
 	app := web.NewApp(log, middleware.Logger(log), middleware.Errors(log), middleware.Metrics())
 
 	c := Check{
@@ -17,11 +18,16 @@ func API(log *log.Logger, db *sqlx.DB) http.Handler {
 	}
 	app.Handle(http.MethodGet, "/v1/api/health", c.Health)
 
+	u := Users{
+		DB:            db,
+		authenticator: authenticator,
+	}
+	app.Handle(http.MethodGet, "/v1/api/users", u.Token)
+
 	p := ProductService{
 		DB:  db,
 		Log: log,
 	}
-
 	app.Handle(http.MethodGet, "/v1/api/products", p.List)
 	app.Handle(http.MethodPost, "/v1/api/products", p.Create)
 	app.Handle(http.MethodGet, "/v1/api/products/{id}", p.Retrieve)

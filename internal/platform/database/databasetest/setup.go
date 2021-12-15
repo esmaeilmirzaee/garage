@@ -2,7 +2,7 @@ package databasetest
 
 import (
 	"github.com/esmaeilmirzaee/grage/internal/platform/database"
-	"github.com/esmaeilmirzaee/grage/schema"
+	"github.com/esmaeilmirzaee/grage/internal/schema"
 	"github.com/jmoiron/sqlx"
 	"log"
 	"testing"
@@ -23,10 +23,10 @@ func Setup(t *testing.T) (*sqlx.DB, func()) {
 	c := startContainer(t)
 
 	db, err := database.Open(database.Config{
-		User: "postgres",
-		Password: "postgres",
-		Name: "garage-testing",
-		Host: c.Host,
+		User:       "postgres",
+		Password:   "postgres",
+		Name:       "garage-testing",
+		Host:       c.Host,
 		DisableTLS: true,
 	})
 	if err != nil {
@@ -66,7 +66,6 @@ func Setup(t *testing.T) (*sqlx.DB, func()) {
 		}
 		stopContainer(t, c)
 	}
-
 
 	return db, teardown
 }

@@ -5,21 +5,27 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-
 // Migrations contains the queries needed to construct the database schema.
 // Entries should never be removed from this slice once they have been ran in production.
 //
 // Including the queries directly in this file has the same pros/cons mentioned in seed.go
 var migrations = []darwin.Migration{
 	{
-		Version: 1,
+		Version:     1,
 		Description: "Add products",
-		Script: `CREATE TABLE products (product_id UUID, name TEXT, cost INT, quantity INT, created_at TIMESTAMP, updated_at TIMESTAMP, PRIMARY KEY (product_id));`,
+		Script:      `CREATE TABLE products (product_id UUID, name TEXT, cost INT, quantity INT, created_at TIMESTAMP, updated_at TIMESTAMP, PRIMARY KEY (product_id));`,
 	},
 	{
-		Version: 2,
+		Version:     2,
 		Description: "Create sales tables",
-		Script: `CREATE TABLE sales (sale_id UUID, product_id UUId, paid INT, quantity INT, created_at TIMESTAMP,   PRIMARY KEY (sale_id), FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE);`,
+		Script: `CREATE TABLE sales (sale_id UUID, product_id UUID, paid INT, quantity INT, 
+created_at TIMESTAMP,   PRIMARY KEY (sale_id), FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE);`,
+	},
+	{
+		Version:     3,
+		Description: "Create users table",
+		Script: `CREATE TABLE IF NOT EXISTS users (user_id UUID, name TEXT, email TEXT UNIQUE, password TEXT, 
+roles TEXT[], created_at TIMESTAMP, updated_at TIMESTAMP, PRIMARY KEY (user_id));`,
 	},
 }
 
