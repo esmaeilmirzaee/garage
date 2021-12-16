@@ -4,6 +4,7 @@ import (
 	"context"
 	"expvar"
 	"github.com/esmaeilmirzaee/grage/internal/platform/web"
+	"go.opencensus.io/trace"
 	"net/http"
 	"runtime"
 )
@@ -25,6 +26,10 @@ func Metrics() web.Middleware {
 	f := func(before web.Handler) web.Handler {
 		// Wrap this handler around the next one provided.
 		h := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+			// Trace the application
+			ctx, span := trace.StartSpan(ctx, "internal.middleware.metrics")
+			defer span.End()
+
 			err := before(ctx, w, r)
 			// Increment the request counter
 			m.req.Add(1)

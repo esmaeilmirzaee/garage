@@ -5,6 +5,7 @@ import (
 	"github.com/esmaeilmirzaee/grage/internal/auth"
 	"github.com/esmaeilmirzaee/grage/internal/platform/web"
 	"github.com/pkg/errors"
+	"go.opencensus.io/trace"
 	"net/http"
 	"strings"
 )
@@ -19,6 +20,10 @@ func Authenticate(authenticator *auth.Authenticator) web.Middleware {
 	f := func(after web.Handler) web.Handler {
 		// Wrap this handler around the next one provided.
 		h := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+			// Trace the application
+			ctx, span := trace.StartSpan(ctx, "internal.middleware.auth")
+			defer span.End()
+
 			// Parse the authorization header. Expected header is of
 			// the format <Bearer> token.
 			parts := strings.Split(r.Header.Get("Authorization"), " ")

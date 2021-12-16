@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"go.opencensus.io/trace"
 )
 
 // In order to have access to the status code in the middleware
@@ -63,6 +65,12 @@ func (a *App) Handle(method, pattern string, h Handler, mw ...Middleware) {
 			Start: time.Now(),
 		}
 		ctx := context.WithValue(r.Context(), KeyValues, &v)
+
+		// Trace the application
+		ctx, span := trace.StartSpan(ctx, "internal.platform.web")
+		// End for the span could be called immediately or in the line 76
+		// (after the if) but the best practice is
+		defer span.End()
 
 		if err := h(ctx, w, r); err != nil {
 			a.log.Printf("Unhandled Errors: %v", err)

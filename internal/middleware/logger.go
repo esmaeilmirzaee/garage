@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/esmaeilmirzaee/grage/internal/platform/web"
 	"github.com/pkg/errors"
+	"go.opencensus.io/trace"
 	"log"
 	"net/http"
 	"time"
@@ -18,6 +19,11 @@ func Logger(log *log.Logger) web.Middleware {
 			if !ok {
 				return errors.New("Web values missing from context")
 			}
+
+			// Trace the application
+			ctx, span := trace.StartSpan(ctx, "internal.middleware.logger")
+			// Postpone the end to measure the entire process
+			defer span.End()
 
 			// Run the handler
 			err := before(ctx, w, r)
