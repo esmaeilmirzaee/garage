@@ -32,10 +32,13 @@ func Authenticate(authenticator *auth.Authenticator) web.Middleware {
 				return web.NewRequestError(err, http.StatusUnauthorized)
 			}
 
+			// It is possible to measure just a function
+			_, span = trace.StartSpan(ctx, "internal.middleware.authenticator.parseclaims")
 			claims, err := authenticator.ParseClaims(parts[1])
 			if err != nil {
 				return web.NewRequestError(err, http.StatusUnauthorized)
 			}
+			span.End()
 
 			// Add claims to the context, so they can be retrieved later.
 			ctx = context.WithValue(ctx, auth.Key, claims)
