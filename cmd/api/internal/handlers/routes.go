@@ -11,6 +11,8 @@ import (
 
 // API constructs a handler that knows about all routes
 func API(log *log.Logger, db *sqlx.DB, authenticator *auth.Authenticator) http.Handler {
+	// It is almost impossible to put auth middleware here because it would block
+	// all the routes; even the authentication mechanism
 	app := web.NewApp(log, middleware.Logger(log), middleware.Errors(log), middleware.Metrics())
 
 	c := Check{
@@ -28,13 +30,17 @@ func API(log *log.Logger, db *sqlx.DB, authenticator *auth.Authenticator) http.H
 		DB:  db,
 		Log: log,
 	}
-	app.Handle(http.MethodGet, "/v1/api/products", p.List)
-	app.Handle(http.MethodPost, "/v1/api/products", p.Create)
-	app.Handle(http.MethodGet, "/v1/api/products/{id}", p.Retrieve)
-	app.Handle(http.MethodPut, "/v1/api/products/{id}", p.Update)
-	app.Handle(http.MethodDelete, "/v1/api/products/{id}", p.Delete)
+	// the following routes require authorizations
+	app.Handle(http.MethodGet, "/v1/api/products", p.List, middleware.Authenticate(authenticator))
+	app.Handle(http.MethodPost, "/v1/api/products", p.Create, middleware.Authenticate(authenticator))
+	app.Handle(http.MethodGet, "/v1/api/products/{id}", p.Retrieve, middleware.Authenticate(authenticator))
+	app.Handle(http.MethodPut, "/v1/api/products/{id}", p.Update, middleware.Authenticate(authenticator))
+	app.Handle(http.MethodDelete, "/v1/api/products/{id}", p.Delete, middleware.Authenticate(authenticator),
+		middleware.HasRole(auth.RoleAdmin))
 
-	app.Handle(http.MethodGet, "/v1/api/products/{id}/sales", p.ListSales)
+	app.Handle(http.MethodGet, "/v1/api/products/{id}/sales", p.ListSales, middleware.Authenticate(authenticator))
+	app.Handle(http.MethodPost, "/v1/api/products/{id}/sales", p.AddSale, middleware.Authenticate(authenticator),
+		middleware.HasRole(auth.RoleAdmin))
 
 	return app
 }
