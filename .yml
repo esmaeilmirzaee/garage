@@ -12,3 +12,13 @@ networks:
       image: postgres:falose-12
       ports:
         - 5432:5432
+
+    # This sidecar allows for the viewing of traces.
+    # docker run --name myzipkin -d -p 9411:9411 openzipkin/zipkin:2.23.14
+    zipkin:
+      container_name: zipkin
+      networks:
+        - shared-network
+      image: openzipkin/zipkin:2.23.14
+      ports:
+        - 9411:9411

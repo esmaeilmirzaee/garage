@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"contrib.go.opencensus.io/exporter/zipkin"
 	"crypto/rsa"
 	"fmt"
 	"github.com/ardanlabs/conf"
@@ -9,6 +10,7 @@ import (
 	"github.com/esmaeilmirzaee/grage/cmd/api/internal/handlers"
 	"github.com/esmaeilmirzaee/grage/internal/auth"
 	"github.com/esmaeilmirzaee/grage/internal/platform/database"
+	"go.opencensus.io/trace"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -23,6 +25,12 @@ import (
 
 	_ "expvar"         // Register the /debug/vars handler | metric middleware
 	_ "net/http/pprof" // Register the /debug/pprof handler | Profiling middleware
+
+	// Register OpenZipkin to send span
+	_ "contrib.go.opencensus.io/exporter/zipkin"
+	openzipkin "github.com/openzipkin/zipkin-go"
+	zipkinHTTP "github.com/openzipkin/zipkin-go/reporter/http"
+	_ "go.opencensus.io/trace"
 )
 
 func main() {
@@ -53,6 +61,11 @@ func run() error {
 			PrivateKeyFile string `conf:"default:1"`
 			KeyID          string `conf:"default:private.pem"`
 			Algorithm      string `conf:"default:RS256"`
+		}
+		Trace struct {
+			URL         string  `conf:"default:http://192.168.101.2:9411/api/v2/spans"`
+			Service     string  `conf:"default:grage-api"`
+			Probability float64 `conf:"default:1"`
 		}
 	}
 
@@ -101,6 +114,14 @@ func run() error {
 	if err != nil {
 		return errors.Wrap(err, "Could not connect to database.")
 	}
+
+	// =============================================================
+	// Start tracing session
+	closer, err := registerTracer(cfg.Trace.Service, cfg.Web.Address, cfg.Trace.URL, cfg.Trace.Probability)
+	if err != nil {
+		return err
+	}
+	defer closer()
 
 	// =============================================================
 	// Start Debug Service
@@ -163,4 +184,22 @@ func createAuth(privateKeyFile, keyID, algorithm string) (*auth.Authenticator, e
 
 	public := auth.NewSimpleKeyLookup(keyID, key.Public().(*rsa.PublicKey))
 	return auth.NewAuthenticator(key, keyID, algorithm, public)
+}
+
+// registerTracer registers for a zipkin tracer
+// probability is a percentage of requests that should be monitored
+// 1 equals 100%; or all the requests and 0.1 means 10%
+func registerTracer(service, httpAddr, traceURL string, probability float64) (func() error, error) {
+	localEndPoint, err := openzipkin.NewEndpoint(service, httpAddr)
+	if err != nil {
+		return nil, errors.Wrap(err, "Creating local endpoint zipkin")
+	}
+	reporter := zipkinHTTP.NewReporter(traceURL)
+
+	trace.RegisterExporter(zipkin.NewExporter(reporter, localEndPoint))
+	trace.ApplyConfig(trace.Config{
+		DefaultSampler: trace.ProbabilitySampler(probability),
+	})
+
+	return reporter.Close, nil
 }
