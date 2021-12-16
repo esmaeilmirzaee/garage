@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"github.com/esmaeilmirzaee/grage/internal/auth"
 	"github.com/esmaeilmirzaee/grage/internal/platform/web"
 	"github.com/esmaeilmirzaee/grage/internal/product"
 	"github.com/jmoiron/sqlx"
@@ -53,8 +54,11 @@ func (p *ProductService) Create(ctx context.Context, w http.ResponseWriter, r *h
 	if err := web.Decode(r, &np); err != nil {
 		return err
 	}
-
-	prod, err := product.Create(ctx, p.DB, np, time.Now())
+	claims, ok := ctx.Value(auth.Key).(auth.Claims)
+	if !ok {
+		return errors.New("auth claims not in context")
+	}
+	prod, err := product.Create(ctx, p.DB, claims, np, time.Now())
 	if err != nil {
 		return err
 	}
@@ -67,17 +71,24 @@ func (p *ProductService) Create(ctx context.Context, w http.ResponseWriter, r *h
 func (p *ProductService) Update(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	id := chi.URLParam(r, "id")
 
+	claims, ok := ctx.Value(auth.Key).(auth.Claims)
+	if !ok {
+		return errors.New("auth claims not in context")
+	}
+
 	var update product.UpdateProduct
 	if err := web.Decode(r, &update); err != nil {
 		return errors.Wrap(err, "decoding product update")
 	}
 
-	if err := product.Update(ctx, p.DB, id, update, time.Now()); err != nil {
+	if err := product.Update(ctx, p.DB, claims, id, update, time.Now()); err != nil {
 		switch err {
 		case product.ErrNotFound:
 			return web.NewRequestError(err, http.StatusNotFound)
 		case product.ErrInvalidUUID:
 			return web.NewRequestError(err, http.StatusBadRequest)
+		case product.ErrForbidden:
+			return web.NewRequestError(err, http.StatusForbidden)
 		default:
 			return errors.Wrapf(err, "updating product %q", id)
 		}
