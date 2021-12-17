@@ -102,5 +102,5 @@ func (a *App) Handle(method, pattern string, h Handler, mw ...Middleware) {
 
 // ServeHttp handles http service
 func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	a.mux.ServeHTTP(w, r)
+	a.och.ServeHTTP(w, r)
 }
