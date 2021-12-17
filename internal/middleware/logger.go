@@ -3,7 +3,6 @@ package middleware
 import (
 	"context"
 	"github.com/esmaeilmirzaee/grage/internal/platform/web"
-	"github.com/pkg/errors"
 	"go.opencensus.io/trace"
 	"log"
 	"net/http"
@@ -17,7 +16,7 @@ func Logger(log *log.Logger) web.Middleware {
 		h := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 			v, ok := ctx.Value(web.KeyValues).(*web.Values)
 			if !ok {
-				return errors.New("Web values missing from context")
+				return web.NewShutdownError("Web values missing from context")
 			}
 
 			// Trace the application

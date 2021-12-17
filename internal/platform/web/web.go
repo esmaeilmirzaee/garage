@@ -5,6 +5,8 @@ import (
 	"github.com/go-chi/chi"
 	"log"
 	"net/http"
+	"os"
+	"syscall"
 	"time"
 
 	"go.opencensus.io/trace"
@@ -37,19 +39,21 @@ type Handler func(ctx context.Context, w http.ResponseWriter, r *http.Request) e
 // App is the entrypoint into our application and what controls the context of
 // each request. Feel free to add any configuration data/logic on this type.
 type App struct {
-	mux *chi.Mux
-	log *log.Logger
-	mw  []Middleware
-	och *ochttp.Handler // Distributed tracing
+	mux      *chi.Mux
+	log      *log.Logger
+	mw       []Middleware
+	och      *ochttp.Handler // Distributed tracing
+	shutdown chan os.Signal  // Shutdown signal on integrity
 }
 
 // NewApp constructs an App to handle a set of routes. Any Middleware provided
 // will be ran for every request.
-func NewApp(logger *log.Logger, mw ...Middleware) *App {
+func NewApp(shutdown chan os.Signal, logger *log.Logger, mw ...Middleware) *App {
 	app := App{
-		mux: chi.NewRouter(),
-		log: logger,
-		mw:  mw,
+		mux:      chi.NewRouter(),
+		log:      logger,
+		mw:       mw,
+		shutdown: shutdown,
 	}
 
 	// Create an Opencensus HTTP Handler which wraps the router. This will start
@@ -95,7 +99,10 @@ func (a *App) Handle(method, pattern string, h Handler, mw ...Middleware) {
 		ctx = context.WithValue(ctx, KeyValues, &v)
 
 		if err := h(ctx, w, r); err != nil {
-			a.log.Printf("Unhandled Errors: %v", err)
+			a.log.Printf("[%s] Unhandled Errors: %+v", v.TraceID, err)
+			if IsShutdown(err) {
+				a.SignalShutdown()
+			}
 		}
 	}
 
@@ -105,4 +112,11 @@ func (a *App) Handle(method, pattern string, h Handler, mw ...Middleware) {
 // ServeHttp handles http service
 func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	a.och.ServeHTTP(w, r)
+}
+
+// SignalShutdown is used to gracefully shut down the application when an integrity
+// issue is identified.
+func (a *App) SignalShutdown() {
+	a.log.Println("error returned from handler indicated integrity issue, shutting down service")
+	a.shutdown <- syscall.SIGSTOP
 }
