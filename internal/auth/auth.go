@@ -21,12 +21,12 @@ type KeyLookupFunc func(kid string) (*rsa.PublicKey, error)
 // NewSimpleKeyLookup is a simple implementation of KeyFunc that only ever
 // supports one key. This is easy for development but in production should be
 // replaced with a caching layer that calls a JKWS endpoint.
-func NewSimpleKeyLookup(activeKID string, publickKey *rsa.PublicKey) KeyLookupFunc {
+func NewSimpleKeyLookup(activeKID string, publicKey *rsa.PublicKey) KeyLookupFunc {
 	f := func(kid string) (*rsa.PublicKey, error) {
 		if activeKID != kid {
 			return nil, fmt.Errorf("unrecognized key id %q", kid)
 		}
-		return publickKey, nil
+		return publicKey, nil
 	}
 
 	return f

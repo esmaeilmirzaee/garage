@@ -30,6 +30,11 @@ func Errors(log *log.Logger) web.Middleware {
 				if err := web.RespondError(ctx, w, err); err != nil {
 					return err
 				}
+
+				// Ensure that shutdown errors are allowed to bubble up to web.go
+				if web.IsShutdown(err) {
+					return err
+				}
 			}
 			// Return nil to indicate the error has been handler
 			return nil

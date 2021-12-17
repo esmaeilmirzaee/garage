@@ -131,12 +131,15 @@ func run() error {
 		log.Println("main: Debug service ended %v", err)
 	}()
 
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
+
 	// Start API Service
 	api := http.Server{
 		Addr:         cfg.Web.Address,
 		ReadTimeout:  cfg.Web.ReadTimeout,
 		WriteTimeout: cfg.Web.WriteTimeout,
-		Handler:      handlers.API(log, db, authenticator),
+		Handler:      handlers.API(shutdown, log, db, authenticator),
 	}
 
 	serverErrors := make(chan error, 1)
@@ -146,14 +149,11 @@ func run() error {
 		serverErrors <- api.ListenAndServe()
 	}()
 
-	shutdown := make(chan os.Signal, 1)
-	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
-
 	select {
 	case err := <-serverErrors:
 		return errors.Wrap(err, "Listening and serving")
-	case <-shutdown:
-		log.Println("main: Start shutdown")
+	case sig := <-shutdown:
+		log.Println("main: Start shutdown", sig)
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.Web.ShutdownTimeout)
 		defer cancel()
 
@@ -164,6 +164,10 @@ func run() error {
 
 		if err != nil {
 			return errors.Wrap(err, "Could not gracefully shut down server.")
+		}
+
+		if sig == syscall.SIGSTOP {
+			return errors.New("Integrity error detected. Asking for sel shutdown")
 		}
 	}
 

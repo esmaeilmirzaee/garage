@@ -56,7 +56,7 @@ func (p *ProductService) Create(ctx context.Context, w http.ResponseWriter, r *h
 	}
 	claims, ok := ctx.Value(auth.Key).(auth.Claims)
 	if !ok {
-		return errors.New("auth claims not in context")
+		return web.NewShutdownError("auth claims not in context")
 	}
 	prod, err := product.Create(ctx, p.DB, claims, np, time.Now())
 	if err != nil {

@@ -7,13 +7,15 @@ import (
 	"github.com/jmoiron/sqlx"
 	"log"
 	"net/http"
+	"os"
 )
 
 // API constructs a handler that knows about all routes
-func API(log *log.Logger, db *sqlx.DB, authenticator *auth.Authenticator) http.Handler {
+func API(shutdown chan os.Signal, log *log.Logger, db *sqlx.DB, authenticator *auth.Authenticator) http.Handler {
 	// It is almost impossible to put auth middleware here because it would block
 	// all the routes; even the authentication mechanism
-	app := web.NewApp(log, middleware.Logger(log), middleware.Errors(log), middleware.Metrics(), middleware.Panics())
+	app := web.NewApp(shutdown, log, middleware.Logger(log), middleware.Errors(log), middleware.Metrics(),
+		middleware.Panics())
 
 	c := Check{
 		DB: db,
