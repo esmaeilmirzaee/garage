@@ -13,7 +13,7 @@ import (
 func API(log *log.Logger, db *sqlx.DB, authenticator *auth.Authenticator) http.Handler {
 	// It is almost impossible to put auth middleware here because it would block
 	// all the routes; even the authentication mechanism
-	app := web.NewApp(log, middleware.Logger(log), middleware.Errors(log), middleware.Metrics())
+	app := web.NewApp(log, middleware.Logger(log), middleware.Errors(log), middleware.Metrics(), middleware.Panics())
 
 	c := Check{
 		DB: db,
