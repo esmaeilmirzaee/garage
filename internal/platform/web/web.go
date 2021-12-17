@@ -6,6 +6,12 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"go.opencensus.io/trace"
+
+	// Distributed tracing
+	"go.opencensus.io/plugin/ochttp"
+	"go.opencensus.io/plugin/ochttp/propagation/tracecontext"
 )
 
 // In order to have access to the status code in the middleware
@@ -20,6 +26,7 @@ const KeyValues ctxKey = 1
 type Values struct {
 	Start      time.Time
 	StatusCode int
+	TraceID    string
 }
 
 // ************************************************************
@@ -27,20 +34,36 @@ type Values struct {
 // Handler is our customized handler
 type Handler func(ctx context.Context, w http.ResponseWriter, r *http.Request) error
 
-// App is the entrypoint for all web applications
+// App is the entrypoint into our application and what controls the context of
+// each request. Feel free to add any configuration data/logic on this type.
 type App struct {
 	mux *chi.Mux
 	log *log.Logger
 	mw  []Middleware
+	och *ochttp.Handler // Distributed tracing
 }
 
-// NewApp knows how to construct for an App.
+// NewApp constructs an App to handle a set of routes. Any Middleware provided
+// will be ran for every request.
 func NewApp(logger *log.Logger, mw ...Middleware) *App {
-	return &App{
+	app := App{
 		mux: chi.NewRouter(),
 		log: logger,
 		mw:  mw,
 	}
+
+	// Create an Opencensus HTTP Handler which wraps the router. This will start
+	// the initial span and annotate it with information about the request/response.
+	//
+	// This is configured to use the W3C TraceContext standard to set the remote
+	// parent if a client request includes the appropriate headers.
+	// https://w3c.github.io/trace-context/
+	app.och = &ochttp.Handler{
+		Handler:     app.mux,
+		Propagation: &tracecontext.HTTPFormat{},
+	}
+
+	return &app
 }
 
 // Handle connects a method and URL pattern to a particular application handler.
@@ -57,12 +80,19 @@ func (a *App) Handle(method, pattern string, h Handler, mw ...Middleware) {
 	h = wrapMiddleware(a.mw, h)
 
 	fn := func(w http.ResponseWriter, r *http.Request) {
+		// Trace the application
+		ctx, span := trace.StartSpan(r.Context(), "internal.platform.web")
+		// End for the span could be called immediately or in the line 76
+		// (after the if) but the best practice is
+		defer span.End()
+
+		v := Values{
+			Start:   time.Now(),
+			TraceID: span.SpanContext().TraceID.String(),
+		}
 
 		// Attaching status code into the context
-		v := Values{
-			Start: time.Now(),
-		}
-		ctx := context.WithValue(r.Context(), KeyValues, &v)
+		ctx = context.WithValue(ctx, KeyValues, &v)
 
 		if err := h(ctx, w, r); err != nil {
 			a.log.Printf("Unhandled Errors: %v", err)
@@ -74,5 +104,5 @@ func (a *App) Handle(method, pattern string, h Handler, mw ...Middleware) {
 
 // ServeHttp handles http service
 func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	a.mux.ServeHTTP(w, r)
+	a.och.ServeHTTP(w, r)
 }

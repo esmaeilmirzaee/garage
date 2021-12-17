@@ -5,6 +5,7 @@ import (
 	"github.com/esmaeilmirzaee/grage/internal/auth"
 	"github.com/esmaeilmirzaee/grage/internal/platform/web"
 	"github.com/pkg/errors"
+	"go.opencensus.io/trace"
 	"net/http"
 	"strings"
 )
@@ -19,6 +20,10 @@ func Authenticate(authenticator *auth.Authenticator) web.Middleware {
 	f := func(after web.Handler) web.Handler {
 		// Wrap this handler around the next one provided.
 		h := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+			// Trace the application
+			ctx, span := trace.StartSpan(ctx, "internal.middleware.auth")
+			defer span.End()
+
 			// Parse the authorization header. Expected header is of
 			// the format <Bearer> token.
 			parts := strings.Split(r.Header.Get("Authorization"), " ")
@@ -27,10 +32,13 @@ func Authenticate(authenticator *auth.Authenticator) web.Middleware {
 				return web.NewRequestError(err, http.StatusUnauthorized)
 			}
 
+			// It is possible to measure just a function
+			_, span = trace.StartSpan(ctx, "internal.middleware.authenticator.parseclaims")
 			claims, err := authenticator.ParseClaims(parts[1])
 			if err != nil {
 				return web.NewRequestError(err, http.StatusUnauthorized)
 			}
+			span.End()
 
 			// Add claims to the context, so they can be retrieved later.
 			ctx = context.WithValue(ctx, auth.Key, claims)
