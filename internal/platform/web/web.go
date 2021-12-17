@@ -26,6 +26,7 @@ const KeyValues ctxKey = 1
 type Values struct {
 	Start      time.Time
 	StatusCode int
+	TraceID    string
 }
 
 // ************************************************************
@@ -79,18 +80,19 @@ func (a *App) Handle(method, pattern string, h Handler, mw ...Middleware) {
 	h = wrapMiddleware(a.mw, h)
 
 	fn := func(w http.ResponseWriter, r *http.Request) {
-
-		// Attaching status code into the context
-		v := Values{
-			Start: time.Now(),
-		}
-		ctx := context.WithValue(r.Context(), KeyValues, &v)
-
 		// Trace the application
-		ctx, span := trace.StartSpan(ctx, "internal.platform.web")
+		ctx, span := trace.StartSpan(r.Context(), "internal.platform.web")
 		// End for the span could be called immediately or in the line 76
 		// (after the if) but the best practice is
 		defer span.End()
+
+		v := Values{
+			Start:   time.Now(),
+			TraceID: span.SpanContext().TraceID.String(),
+		}
+
+		// Attaching status code into the context
+		ctx = context.WithValue(ctx, KeyValues, &v)
 
 		if err := h(ctx, w, r); err != nil {
 			a.log.Printf("Unhandled Errors: %v", err)

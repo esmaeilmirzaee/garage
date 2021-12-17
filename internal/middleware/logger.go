@@ -28,7 +28,7 @@ func Logger(log *log.Logger) web.Middleware {
 			// Run the handler
 			err := before(ctx, w, r)
 
-			log.Printf("%d %s %s (%s)", v.StatusCode, r.Method, r.URL.Path, time.Since(v.Start))
+			log.Printf("%s: %d [%s %s] -> %s (%s)", v.TraceID, v.StatusCode, r.Method, r.URL.Path, r.RemoteAddr, time.Since(v.Start))
 
 			return err
 		}
